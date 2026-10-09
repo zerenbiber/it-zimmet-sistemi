@@ -1,13 +1,15 @@
-import bcrypt from "bcryptjs";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { Role } from "../../generated/prisma/enums.js";
-import { badRequest, conflict, notFound } from "../../lib/http-error.js";
+import { badRequest, conflict, HttpError, notFound } from "../../lib/http-error.js";
+import { sendMail, temporaryPasswordMail } from "../../lib/mailer.js";
 import { paginate, paginated } from "../../lib/pagination.js";
+import { generateTemporaryPassword, hashPassword } from "../../lib/password.js";
 import { prisma } from "../../lib/prisma.js";
 import { containsAny } from "../../lib/search.js";
 import type { CreateUserInput, ListUsersQuery, UpdateUserInput } from "./users.schemas.js";
 
-const PASSWORD_HASH_ROUNDS = 12;
+/** Long enough for an SMTP round-trip inside the transaction. */
+const MAIL_TRANSACTION_TIMEOUT_MS = 30_000;
 
 const userSelect = {
   id: true,
@@ -18,6 +20,7 @@ const userSelect = {
   title: true,
   phone: true,
   isActive: true,
+  mustChangePassword: true,
   lastLoginAt: true,
   createdAt: true,
   department: { select: { id: true, name: true } },
@@ -69,15 +72,65 @@ export async function getUser(id: string) {
   return toPublicUser(user);
 }
 
-export async function createUser({ password, ...data }: CreateUserInput) {
-  const user = await prisma.user.create({
-    data: { ...data, passwordHash: await bcrypt.hash(password, PASSWORD_HASH_ROUNDS) },
-    select: userSelect,
-  });
+/**
+ * Sends the temporary password inside the transaction: if the e-mail cannot be
+ * delivered, the change is rolled back and nobody is left with a password they never received.
+ */
+async function deliverTemporaryPassword(
+  user: { email: string; firstName: string },
+  password: string,
+  reason: "created" | "reset",
+) {
+  try {
+    await sendMail(temporaryPasswordMail({ to: user.email, firstName: user.firstName, password, reason }));
+  } catch (error) {
+    console.error("Temporary password e-mail failed:", error);
+    throw new HttpError(502, "Şifre e-postası gönderilemedi; işlem geri alındı. E-posta ayarlarını kontrol edin.", "MAIL_FAILED");
+  }
+}
+
+export async function createUser(data: CreateUserInput) {
+  const password = generateTemporaryPassword();
+  const passwordHash = await hashPassword(password);
+
+  const user = await prisma.$transaction(
+    async (tx) => {
+      const created = await tx.user.create({
+        data: { ...data, passwordHash, mustChangePassword: true },
+        select: userSelect,
+      });
+      await deliverTemporaryPassword(created, password, "created");
+      return created;
+    },
+    { timeout: MAIL_TRANSACTION_TIMEOUT_MS },
+  );
+
   return toPublicUser(user);
 }
 
-export async function updateUser(id: string, actorId: string, { password, ...data }: UpdateUserInput) {
+export async function resetPassword(id: string, actorId: string) {
+  if (id === actorId) {
+    throw badRequest("Kendi şifrenizi profil sayfasından değiştirin.");
+  }
+  const existing = await getUser(id);
+  if (!existing.isActive) {
+    throw badRequest("Pasif bir hesabın şifresi sıfırlanamaz; önce hesabı aktifleştirin.");
+  }
+
+  const password = generateTemporaryPassword();
+  const passwordHash = await hashPassword(password);
+
+  await prisma.$transaction(
+    async (tx) => {
+      await tx.user.update({ where: { id }, data: { passwordHash, mustChangePassword: true } });
+      await tx.refreshToken.updateMany({ where: { userId: id, revokedAt: null }, data: { revokedAt: new Date() } });
+      await deliverTemporaryPassword(existing, password, "reset");
+    },
+    { timeout: MAIL_TRANSACTION_TIMEOUT_MS },
+  );
+}
+
+export async function updateUser(id: string, actorId: string, data: UpdateUserInput) {
   const existing = await getUser(id);
   const roleChanged = data.role !== undefined && data.role !== existing.role;
 
@@ -87,15 +140,12 @@ export async function updateUser(id: string, actorId: string, { password, ...dat
 
   const user = await prisma.user.update({
     where: { id },
-    data: {
-      ...data,
-      ...(password && { passwordHash: await bcrypt.hash(password, PASSWORD_HASH_ROUNDS) }),
-    },
+    data,
     select: userSelect,
   });
 
-  // Deactivation, a role change or a new password ends every session of the user.
-  if (data.isActive === false || roleChanged || password) {
+  // Deactivation or a role change ends every session of the user.
+  if (data.isActive === false || roleChanged) {
     await revokeSessions(id);
   }
 

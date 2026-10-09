@@ -1,13 +1,14 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { api } from "../api/client";
+import { api, downloadFile } from "../api/client";
 import type { Device, Paginated } from "../api/types";
 import { EmptyState, ErrorBox, Loading, PageHeader, Pagination, StatusBadge } from "../components/ui";
 import { fullName } from "../lib/format";
 import { useDebouncedValue, useUrlFilters } from "../lib/hooks";
 import { DEVICE_STATUS_LABELS, DEVICE_STATUSES, DEVICE_TYPE_LABELS, DEVICE_TYPES } from "../lib/labels";
 import { DeviceFormModal } from "./DeviceFormModal";
+import { DeviceImportModal } from "./DeviceImportModal";
 
 const FILTER_KEYS = ["search", "status", "type"] as const;
 
@@ -17,6 +18,22 @@ export function DevicesPage() {
   const [searchInput, setSearchInput] = useState(values.search);
   const debouncedSearch = useDebouncedValue(searchInput);
   const [creating, setCreating] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<unknown>(null);
+
+  // The export honours the filters currently applied to the list.
+  async function exportToExcel() {
+    setExporting(true);
+    setExportError(null);
+    try {
+      await downloadFile("/devices/export", values);
+    } catch (error) {
+      setExportError(error);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   useEffect(() => {
     if (debouncedSearch !== values.search) {
@@ -37,9 +54,17 @@ export function DevicesPage() {
         title="Cihazlar"
         subtitle="Envanterdeki tüm demirbaşlar"
         actions={
-          <button className="btn btn-primary" onClick={() => setCreating(true)}>
-            + Yeni cihaz
-          </button>
+          <>
+            <button className="btn btn-secondary" onClick={() => void exportToExcel()} disabled={exporting}>
+              {exporting ? "Hazırlanıyor…" : "Excel'e aktar"}
+            </button>
+            <button className="btn btn-secondary" onClick={() => setImporting(true)}>
+              Excel'den içe aktar
+            </button>
+            <button className="btn btn-primary" onClick={() => setCreating(true)}>
+              + Yeni cihaz
+            </button>
+          </>
         }
       />
 
@@ -70,7 +95,7 @@ export function DevicesPage() {
         </select>
       </div>
 
-      <ErrorBox error={error} />
+      <ErrorBox error={error ?? exportError} />
       {isPending ? (
         <Loading />
       ) : data && data.items.length === 0 ? (
@@ -130,6 +155,7 @@ export function DevicesPage() {
         )
       )}
 
+      {importing && <DeviceImportModal onClose={() => setImporting(false)} />}
       {creating && (
         <DeviceFormModal onClose={() => setCreating(false)} onSaved={(device) => navigate(`/cihazlar/${device.id}`)} />
       )}

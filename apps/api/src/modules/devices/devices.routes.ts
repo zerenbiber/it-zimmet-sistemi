@@ -1,9 +1,11 @@
-import { Router } from "express";
+import express, { Router, type Response } from "express";
 import { z } from "zod";
 import { Role } from "../../generated/prisma/enums.js";
+import { badRequest } from "../../lib/http-error.js";
 import { idParam } from "../../lib/params.js";
 import { authenticate, authorize } from "../../middlewares/authenticate.js";
 import { validateBody } from "../../middlewares/validate.js";
+import { buildImportTemplate, exportDevices, importDevices } from "./devices.excel.js";
 import {
   assignDeviceSchema,
   changeStatusSchema,
@@ -21,6 +23,14 @@ import * as devicesService from "./devices.service.js";
 
 const assetTagSchema = z.string().trim().min(1).max(32);
 
+const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+function sendXlsx(res: Response, fileName: string, file: Buffer) {
+  res.type(XLSX_MIME).attachment(fileName).send(file);
+}
+
+const today = () => new Date().toISOString().slice(0, 10);
+
 export const devicesRouter = Router();
 
 devicesRouter.use(authenticate, authorize(Role.ADMIN));
@@ -28,6 +38,27 @@ devicesRouter.use(authenticate, authorize(Role.ADMIN));
 devicesRouter.get("/", async (req, res) => {
   res.json(await devicesService.listDevices(listDevicesQuerySchema.parse(req.query)));
 });
+
+devicesRouter.get("/export", async (req, res) => {
+  const { page: _page, pageSize: _pageSize, ...filters } = listDevicesQuerySchema.parse(req.query);
+  sendXlsx(res, `cihazlar-${today()}.xlsx`, await exportDevices(filters));
+});
+
+devicesRouter.get("/import-template", async (_req, res) => {
+  sendXlsx(res, "cihaz-ice-aktarma-sablonu.xlsx", await buildImportTemplate());
+});
+
+/** Body is the raw .xlsx file. All rows are created, or none if any row is invalid. */
+devicesRouter.post(
+  "/import",
+  express.raw({ type: [XLSX_MIME, "application/octet-stream"], limit: "5mb" }),
+  async (req, res) => {
+    if (!Buffer.isBuffer(req.body) || req.body.length === 0) {
+      throw badRequest("Excel dosyası gönderilmedi.", "NO_FILE");
+    }
+    res.status(201).json(await importDevices(req.body, req.auth!.userId));
+  },
+);
 
 /** Used when a device's QR code is scanned. */
 devicesRouter.get("/by-tag/:assetTag", async (req, res) => {

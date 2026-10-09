@@ -3,6 +3,8 @@ export class HttpError extends Error {
     public readonly status: number,
     message: string,
     public readonly code?: string,
+    /** Structured, client-facing detail such as per-row import errors. */
+    public readonly details?: unknown,
   ) {
     super(message);
     this.name = "HttpError";
@@ -12,8 +14,8 @@ export class HttpError extends Error {
 export const unauthorized = (message = "Kimlik doğrulaması gerekli.", code = "UNAUTHORIZED") =>
   new HttpError(401, message, code);
 
-export const forbidden = (message = "Bu işlem için yetkiniz yok.") =>
-  new HttpError(403, message, "FORBIDDEN");
+export const forbidden = (message = "Bu işlem için yetkiniz yok.", code = "FORBIDDEN") =>
+  new HttpError(403, message, code);
 
 export const notFound = (message = "Kaynak bulunamadı.") => new HttpError(404, message, "NOT_FOUND");
 

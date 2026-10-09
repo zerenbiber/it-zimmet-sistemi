@@ -5,7 +5,8 @@ export class ApiError extends Error {
     public readonly status: number,
     message: string,
     public readonly code?: string,
-    public readonly details?: Record<string, string[] | undefined>,
+    /** Field errors for validation failures; per-row errors for imports. */
+    public readonly details?: unknown,
   ) {
     super(message);
     this.name = "ApiError";
@@ -87,6 +88,11 @@ interface RequestOptions {
   query?: Record<string, QueryValue>;
 }
 
+interface RawRequestOptions extends Omit<RequestOptions, "body"> {
+  /** Sent as-is (e.g. an uploaded file) instead of JSON. */
+  file?: File;
+}
+
 function buildUrl(path: string, query?: Record<string, QueryValue>): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query ?? {})) {
@@ -98,15 +104,17 @@ function buildUrl(path: string, query?: Record<string, QueryValue>): string {
   return `/api${path}${search ? `?${search}` : ""}`;
 }
 
-export async function api<T>(path: string, { method = "GET", body, query }: RequestOptions = {}): Promise<T> {
+/** Sends a request, refreshing the access token once if it has expired. */
+async function request(path: string, { method = "GET", body, query, file }: RequestOptions & RawRequestOptions) {
   const send = () =>
     fetch(buildUrl(path, query), {
       method,
       headers: {
         ...(body !== undefined && { "Content-Type": "application/json" }),
+        ...(file && { "Content-Type": file.type || "application/octet-stream" }),
         ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: file ?? (body === undefined ? undefined : JSON.stringify(body)),
     });
 
   let response = await send();
@@ -122,7 +130,7 @@ export async function api<T>(path: string, { method = "GET", body, query }: Requ
 
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as {
-      error?: { code?: string; message?: string; details?: Record<string, string[]> };
+      error?: { code?: string; message?: string; details?: unknown };
     } | null;
     throw new ApiError(
       response.status,
@@ -132,12 +140,42 @@ export async function api<T>(path: string, { method = "GET", body, query }: Requ
     );
   }
 
+  return response;
+}
+
+export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const response = await request(path, options);
   return (response.status === 204 ? undefined : await response.json()) as T;
+}
+
+export async function uploadFile<T>(path: string, file: File): Promise<T> {
+  const response = await request(path, { method: "POST", file });
+  return (await response.json()) as T;
+}
+
+/** Downloads a file from an authenticated endpoint and hands it to the browser. */
+export async function downloadFile(path: string, query?: Record<string, QueryValue>): Promise<void> {
+  const response = await request(path, { query });
+  const disposition = response.headers.get("Content-Disposition") ?? "";
+  const fileName = /filename="?([^";]+)"?/.exec(disposition)?.[1] ?? "dosya";
+
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = decodeURIComponent(fileName);
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export function errorMessage(error: unknown): string {
   if (error instanceof ApiError) {
-    const firstDetail = Object.values(error.details ?? {}).flat()[0];
+    const details = error.details;
+    const firstDetail =
+      details && typeof details === "object" && !Array.isArray(details)
+        ? (Object.values(details).flat()[0] as string | undefined)
+        : undefined;
     return firstDetail ? `${error.message} ${firstDetail}` : error.message;
   }
   return "Beklenmeyen bir hata oluştu.";

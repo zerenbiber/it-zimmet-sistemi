@@ -32,6 +32,12 @@ usersRouter.patch("/:id", validateBody(updateUserSchema), async (req, res) => {
   res.json(await usersService.updateUser(idParam(req.params.id), req.auth!.userId, req.body as UpdateUserInput));
 });
 
+/** Generates a new temporary password and e-mails it to the user. */
+usersRouter.post("/:id/reset-password", async (req, res) => {
+  await usersService.resetPassword(idParam(req.params.id), req.auth!.userId);
+  res.status(204).end();
+});
+
 usersRouter.delete("/:id", async (req, res) => {
   await usersService.deleteUser(idParam(req.params.id), req.auth!.userId);
   res.status(204).end();

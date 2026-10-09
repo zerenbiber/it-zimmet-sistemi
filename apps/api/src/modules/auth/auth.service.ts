@@ -1,8 +1,9 @@
 import bcrypt from "bcryptjs";
 import type { Role } from "../../generated/prisma/enums.js";
-import { notFound, unauthorized } from "../../lib/http-error.js";
+import { badRequest, notFound, unauthorized } from "../../lib/http-error.js";
+import { hashPassword } from "../../lib/password.js";
 import { prisma } from "../../lib/prisma.js";
-import type { LoginInput } from "./auth.schemas.js";
+import type { ChangePasswordInput, LoginInput } from "./auth.schemas.js";
 import {
   generateRefreshToken,
   hashRefreshToken,
@@ -22,17 +23,23 @@ const publicUserSelect = {
   title: true,
   phone: true,
   lastLoginAt: true,
+  mustChangePassword: true,
   department: { select: { id: true, name: true } },
 } as const;
 
-async function issueTokens(userId: string, role: Role) {
+async function issueTokens(user: { id: string; role: Role; mustChangePassword: boolean }) {
   const refreshToken = generateRefreshToken();
 
   await prisma.refreshToken.create({
-    data: { userId, tokenHash: hashRefreshToken(refreshToken), expiresAt: refreshTokenExpiry() },
+    data: { userId: user.id, tokenHash: hashRefreshToken(refreshToken), expiresAt: refreshTokenExpiry() },
   });
 
-  return { accessToken: signAccessToken(userId, role), refreshToken };
+  const accessToken = signAccessToken({
+    userId: user.id,
+    role: user.role,
+    mustChangePassword: user.mustChangePassword,
+  });
+  return { accessToken, refreshToken };
 }
 
 export async function login({ email, password }: LoginInput) {
@@ -49,7 +56,7 @@ export async function login({ email, password }: LoginInput) {
     select: publicUserSelect,
   });
 
-  return { user: updatedUser, ...(await issueTokens(user.id, user.role)) };
+  return { user: updatedUser, ...(await issueTokens(user)) };
 }
 
 /**
@@ -59,7 +66,9 @@ export async function login({ email, password }: LoginInput) {
 export async function refresh(refreshToken: string) {
   const stored = await prisma.refreshToken.findUnique({
     where: { tokenHash: hashRefreshToken(refreshToken) },
-    include: { user: { select: { id: true, role: true, isActive: true, deletedAt: true } } },
+    include: {
+      user: { select: { id: true, role: true, mustChangePassword: true, isActive: true, deletedAt: true } },
+    },
   });
 
   if (!stored) {
@@ -87,7 +96,7 @@ export async function refresh(refreshToken: string) {
     throw unauthorized("Geçersiz yenileme anahtarı.", "INVALID_REFRESH_TOKEN");
   }
 
-  return issueTokens(stored.user.id, stored.user.role);
+  return issueTokens(stored.user);
 }
 
 export async function logout(refreshToken: string) {
@@ -107,4 +116,37 @@ export async function getCurrentUser(userId: string) {
     throw notFound("Kullanıcı bulunamadı.");
   }
   return user;
+}
+
+/**
+ * Replaces the password, clears the temporary-password flag and ends every
+ * other session, then issues a fresh token pair for the current one.
+ */
+export async function changePassword(userId: string, { currentPassword, newPassword }: ChangePasswordInput) {
+  const user = await prisma.user.findFirst({ where: { id: userId, isActive: true, deletedAt: null } });
+  if (!user) {
+    throw notFound("Kullanıcı bulunamadı.");
+  }
+
+  if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
+    throw badRequest("Mevcut şifre hatalı.", "INVALID_CURRENT_PASSWORD");
+  }
+  if (await bcrypt.compare(newPassword, user.passwordHash)) {
+    throw badRequest("Yeni şifre mevcut şifreyle aynı olamaz.", "PASSWORD_REUSED");
+  }
+
+  const [updatedUser] = await prisma.$transaction([
+    prisma.user.update({
+      where: { id: userId },
+      data: {
+        passwordHash: await hashPassword(newPassword),
+        mustChangePassword: false,
+        passwordChangedAt: new Date(),
+      },
+      select: publicUserSelect,
+    }),
+    prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } }),
+  ]);
+
+  return { user: updatedUser, ...(await issueTokens({ ...user, mustChangePassword: false })) };
 }

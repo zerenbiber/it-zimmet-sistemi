@@ -40,6 +40,7 @@ export interface CurrentUser extends Person {
   title: string | null;
   phone: string | null;
   lastLoginAt: string | null;
+  mustChangePassword: boolean;
   department: Ref | null;
 }
 
@@ -133,4 +134,37 @@ export interface DashboardStats {
     device: Pick<Device, "id" | "assetTag" | "brand" | "model">;
     performedBy: Person | null;
   }[];
+}
+
+interface DocumentPerson extends Person {
+  title: string | null;
+  department: Ref | null;
+}
+
+/** GET /assignments/:id — data for the printed hand-over and return forms. */
+export interface AssignmentDocument {
+  id: string;
+  organizationName: string;
+  assignedAt: string;
+  assignNote: string | null;
+  returnedAt: string | null;
+  returnNote: string | null;
+  device: Pick<
+    Device,
+    "id" | "assetTag" | "type" | "brand" | "model" | "serialNumber" | "purchaseDate" | "warrantyEndDate" | "notes"
+  >;
+  user: DocumentPerson & { email: string; phone: string | null };
+  assignedBy: DocumentPerson;
+  returnedTo: DocumentPerson | null;
+}
+
+export interface ImportRowError {
+  row: number;
+  messages: string[];
+}
+
+export interface ImportResult {
+  created: number;
+  firstAssetTag: string;
+  lastAssetTag: string;
 }

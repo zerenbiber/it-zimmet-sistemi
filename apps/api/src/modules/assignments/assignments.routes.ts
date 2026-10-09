@@ -1,8 +1,11 @@
 import { Router } from "express";
 import { z } from "zod";
+import { env } from "../../config/env.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 import { Role } from "../../generated/prisma/enums.js";
+import { notFound } from "../../lib/http-error.js";
 import { optionalQuery, paginate, paginated, paginationSchema } from "../../lib/pagination.js";
+import { idParam } from "../../lib/params.js";
 import { prisma } from "../../lib/prisma.js";
 import { authenticate } from "../../middlewares/authenticate.js";
 
@@ -50,4 +53,48 @@ assignmentsRouter.get("/", async (req, res) => {
   ]);
 
   res.json(paginated(assignments, total, query));
+});
+
+const documentPersonSelect = {
+  ...personSelect,
+  title: true,
+  department: { select: { id: true, name: true } },
+} as const;
+
+/** Everything needed to print the hand-over / return form of one assignment. */
+assignmentsRouter.get("/:id", async (req, res) => {
+  const assignment = await prisma.assignment.findUnique({
+    where: { id: idParam(req.params.id) },
+    select: {
+      id: true,
+      userId: true,
+      assignedAt: true,
+      assignNote: true,
+      returnedAt: true,
+      returnNote: true,
+      device: {
+        select: {
+          id: true,
+          assetTag: true,
+          type: true,
+          brand: true,
+          model: true,
+          serialNumber: true,
+          purchaseDate: true,
+          warrantyEndDate: true,
+          notes: true,
+        },
+      },
+      user: { select: { ...documentPersonSelect, email: true, phone: true } },
+      assignedBy: { select: documentPersonSelect },
+      returnedTo: { select: documentPersonSelect },
+    },
+  });
+
+  if (!assignment || (req.auth!.role !== Role.ADMIN && assignment.userId !== req.auth!.userId)) {
+    throw notFound("Zimmet kaydı bulunamadı.");
+  }
+
+  const { userId: _userId, ...rest } = assignment;
+  res.json({ ...rest, organizationName: env.ORGANIZATION_NAME });
 });

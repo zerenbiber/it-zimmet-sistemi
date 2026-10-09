@@ -3,7 +3,9 @@ import { Navigate, Route, Routes, useLocation } from "react-router";
 import { useAuth } from "./auth/AuthContext";
 import { Layout } from "./components/Layout";
 import { Loading } from "./components/ui";
+import { AssignmentDocumentPage } from "./pages/AssignmentDocumentPage";
 import { AssignmentsPage } from "./pages/AssignmentsPage";
+import { ForcedPasswordChangePage, ProfilePage } from "./pages/ChangePasswordPages";
 import { DashboardPage } from "./pages/DashboardPage";
 import { DepartmentsPage } from "./pages/DepartmentsPage";
 import { DeviceDetailPage } from "./pages/DeviceDetailPage";
@@ -22,6 +24,10 @@ function RequireAuth({ children }: { children: ReactNode }) {
   }
   if (state.status === "anonymous") {
     return <Navigate to="/giris" replace state={{ from: location.pathname + location.search }} />;
+  }
+  // A temporary password must be replaced before anything else is reachable.
+  if (state.user.mustChangePassword) {
+    return <ForcedPasswordChangePage />;
   }
   return children;
 }
@@ -52,6 +58,8 @@ export function App() {
         ) : (
           <Route index element={<MyAssignmentsPage />} />
         )}
+        <Route path="zimmetler/:id/tutanak" element={<AssignmentDocumentPage />} />
+        <Route path="profil" element={<ProfilePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

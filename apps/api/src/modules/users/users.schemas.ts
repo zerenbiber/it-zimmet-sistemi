@@ -10,8 +10,6 @@ const nullableText = (max: number) =>
     .transform((value) => value || null)
     .nullish();
 
-const passwordSchema = z.string().min(8, "Şifre en az 8 karakter olmalı.").max(128);
-
 const userFields = {
   firstName: z.string().trim().min(1, "Ad gerekli.").max(50),
   lastName: z.string().trim().min(1, "Soyad gerekli.").max(50),
@@ -24,7 +22,6 @@ const userFields = {
 export const createUserSchema = z.object({
   ...userFields,
   role: z.enum(Role).default(Role.STAFF),
-  password: passwordSchema,
 });
 
 export const updateUserSchema = z
@@ -32,7 +29,6 @@ export const updateUserSchema = z
     ...userFields,
     role: z.enum(Role),
     isActive: z.boolean(),
-    password: passwordSchema,
   })
   .partial();
 

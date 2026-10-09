@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
+import { useNavigate } from "react-router";
 import { api } from "../api/client";
 import type { Device, DeviceStatus, Paginated, User } from "../api/types";
 import { ErrorBox, Field, Modal } from "../components/ui";
@@ -12,16 +13,16 @@ interface ActionProps {
   onClose(): void;
 }
 
-function useDeviceMutation(device: Device, path: string, onDone: () => void) {
+function useDeviceMutation(device: Device, path: string, onDone: (updated: Device) => void) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (body: object) => api<Device>(`/devices/${device.id}/${path}`, { method: "POST", body }),
-    onSuccess: () => {
+    onSuccess: (updated) => {
       void queryClient.invalidateQueries({ queryKey: ["devices"] });
       void queryClient.invalidateQueries({ queryKey: ["assignments"] });
       void queryClient.invalidateQueries({ queryKey: ["users"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      onDone();
+      onDone(updated);
     },
   });
 }
@@ -44,7 +45,11 @@ export function AssignModal({ device, onClose }: ActionProps) {
   const [userId, setUserId] = useState("");
   const [note, setNote] = useState("");
   const debouncedSearch = useDebouncedValue(search);
-  const mutation = useDeviceMutation(device, "assign", onClose);
+  const navigate = useNavigate();
+  // The hand-over form is opened right away so that it can be printed and signed.
+  const mutation = useDeviceMutation(device, "assign", (updated) =>
+    updated.currentAssignment ? navigate(`/zimmetler/${updated.currentAssignment.id}/tutanak`) : onClose(),
+  );
 
   const users = useQuery({
     queryKey: ["users", "picker", debouncedSearch],
@@ -98,7 +103,11 @@ export function AssignModal({ device, onClose }: ActionProps) {
 export function ReturnModal({ device, onClose }: ActionProps) {
   const [status, setStatus] = useState<DeviceStatus>("IN_STOCK");
   const [note, setNote] = useState("");
-  const mutation = useDeviceMutation(device, "return", onClose);
+  const navigate = useNavigate();
+  const assignmentId = device.currentAssignment?.id;
+  const mutation = useDeviceMutation(device, "return", () =>
+    assignmentId ? navigate(`/zimmetler/${assignmentId}/tutanak?tur=iade`) : onClose(),
+  );
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();

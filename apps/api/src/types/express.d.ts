@@ -7,6 +7,7 @@ declare global {
       auth?: {
         userId: string;
         role: Role;
+        mustChangePassword: boolean;
       };
     }
   }

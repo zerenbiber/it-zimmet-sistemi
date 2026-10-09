@@ -15,7 +15,7 @@ import type {
 
 const personSelect = { id: true, firstName: true, lastName: true } as const;
 
-const deviceSelect = {
+export const deviceSelect = {
   id: true,
   assetTag: true,
   type: true,
@@ -49,7 +49,7 @@ const STATUS_EVENT: Partial<Record<DeviceStatus, DeviceEventType>> = {
 };
 
 /** Produces the next sequential, year-scoped tag such as IT-2026-00042. */
-async function nextAssetTag(tx: Prisma.TransactionClient): Promise<string> {
+export async function nextAssetTag(tx: Prisma.TransactionClient): Promise<string> {
   const year = new Date().getFullYear();
   const [row] = await tx.$queryRaw<{ last_value: number }[]>`
     INSERT INTO asset_tag_counters (year, last_value) VALUES (${year}, 1)
@@ -66,8 +66,8 @@ async function findDevice(where: Prisma.DeviceWhereInput) {
   return toPublicDevice(device);
 }
 
-export async function listDevices(query: ListDevicesQuery) {
-  const where: Prisma.DeviceWhereInput = {
+export function buildDeviceWhere(query: Omit<ListDevicesQuery, "page" | "pageSize">): Prisma.DeviceWhereInput {
+  return {
     deletedAt: null,
     status: query.status,
     type: query.type,
@@ -85,6 +85,10 @@ export async function listDevices(query: ListDevicesQuery) {
       ]),
     }),
   };
+}
+
+export async function listDevices(query: ListDevicesQuery) {
+  const where = buildDeviceWhere(query);
 
   const [devices, total] = await prisma.$transaction([
     prisma.device.findMany({ where, select: deviceSelect, orderBy: { createdAt: "desc" }, ...paginate(query) }),

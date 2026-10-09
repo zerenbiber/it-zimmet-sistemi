@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router";
+import { Link, NavLink, Outlet } from "react-router";
 import { useAuth, useCurrentUser } from "../auth/AuthContext";
 import { fullName } from "../lib/format";
 import { ROLE_LABELS } from "../lib/labels";
@@ -36,14 +36,16 @@ export function Layout() {
           ))}
         </nav>
         <div className="sidebar-user">
-          <div className="avatar" aria-hidden="true">
-            {user.firstName[0]}
-            {user.lastName[0]}
-          </div>
-          <div className="sidebar-user-info">
-            <strong>{fullName(user)}</strong>
-            <span className="muted">{ROLE_LABELS[user.role]}</span>
-          </div>
+          <Link to="/profil" className="sidebar-user-link" title="Profilim">
+            <span className="avatar" aria-hidden="true">
+              {user.firstName[0]}
+              {user.lastName[0]}
+            </span>
+            <span className="sidebar-user-info">
+              <strong>{fullName(user)}</strong>
+              <span className="muted">{ROLE_LABELS[user.role]}</span>
+            </span>
+          </Link>
           <button className="btn btn-ghost btn-sm" onClick={() => void logout()}>
             Çıkış
           </button>

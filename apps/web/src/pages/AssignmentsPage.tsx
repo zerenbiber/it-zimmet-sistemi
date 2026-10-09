@@ -74,6 +74,7 @@ export function AssignmentsPage() {
                     <th>Zimmet tarihi</th>
                     <th>Zimmetleyen</th>
                     <th>İade</th>
+                    <th>Tutanak</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -106,6 +107,15 @@ export function AssignmentsPage() {
                           </>
                         ) : (
                           <span className="tag tag-info">Aktif</span>
+                        )}
+                      </td>
+                      <td className="nowrap">
+                        <Link to={`/zimmetler/${assignment.id}/tutanak`}>Zimmet</Link>
+                        {assignment.returnedAt && (
+                          <>
+                            {" · "}
+                            <Link to={`/zimmetler/${assignment.id}/tutanak?tur=iade`}>İade</Link>
+                          </>
                         )}
                       </td>
                     </tr>

@@ -138,8 +138,8 @@ export function DeviceDetailPage() {
         </section>
 
         <section className="card qr-card">
-          <h2 className="card-title no-print">QR etiketi</h2>
-          <div className="qr-label">
+          <h2 className="card-title">QR etiketi</h2>
+          <div className="qr-label print-area">
             <QRCodeSVG value={device.assetTag} size={148} marginSize={2} />
             <div>
               <strong className="mono">{device.assetTag}</strong>
@@ -170,6 +170,7 @@ export function DeviceDetailPage() {
                   <th>İade tarihi</th>
                   <th>İade alan</th>
                   <th>Notlar</th>
+                  <th>Tutanak</th>
                 </tr>
               </thead>
               <tbody>
@@ -182,6 +183,15 @@ export function DeviceDetailPage() {
                     <td>{fullName(assignment.returnedTo)}</td>
                     <td className="small">
                       {[assignment.assignNote, assignment.returnNote && `İade: ${assignment.returnNote}`].filter(Boolean).join(" · ") || "—"}
+                    </td>
+                    <td className="nowrap">
+                      <Link to={`/zimmetler/${assignment.id}/tutanak`}>Zimmet</Link>
+                      {assignment.returnedAt && (
+                        <>
+                          {" · "}
+                          <Link to={`/zimmetler/${assignment.id}/tutanak?tur=iade`}>İade</Link>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}

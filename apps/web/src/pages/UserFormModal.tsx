@@ -6,7 +6,15 @@ import { useCurrentUser } from "../auth/AuthContext";
 import { ErrorBox, Field, Modal } from "../components/ui";
 import { ROLE_LABELS } from "../lib/labels";
 
-export function UserFormModal({ user, onClose }: { user?: User; onClose(): void }) {
+export function UserFormModal({
+  user,
+  onClose,
+  onCreated,
+}: {
+  user?: User;
+  onClose(): void;
+  onCreated?(user: User): void;
+}) {
   const queryClient = useQueryClient();
   const currentUser = useCurrentUser();
   const isSelf = user?.id === currentUser.id;
@@ -25,23 +33,24 @@ export function UserFormModal({ user, onClose }: { user?: User; onClose(): void 
     departmentId: user?.department?.id ?? "",
     role: user?.role ?? ("STAFF" as Role),
     isActive: user?.isActive ?? true,
-    password: "",
   });
 
   const mutation = useMutation({
     mutationFn: () => {
-      const { password, isActive, ...rest } = form;
+      const { isActive, ...rest } = form;
       const body = {
         ...rest,
         departmentId: rest.departmentId || null,
-        ...(password && { password }),
         ...(user && { isActive }),
       };
       return user
         ? api<User>(`/users/${user.id}`, { method: "PATCH", body })
         : api<User>("/users", { method: "POST", body });
     },
-    onSuccess: () => {
+    onSuccess: (saved) => {
+      if (!user) {
+        onCreated?.(saved);
+      }
       void queryClient.invalidateQueries({ queryKey: ["users"] });
       void queryClient.invalidateQueries({ queryKey: ["departments"] });
       void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
@@ -109,16 +118,12 @@ export function UserFormModal({ user, onClose }: { user?: User; onClose(): void 
             ))}
           </select>
         </Field>
-        <Field label={user ? "Yeni şifre" : "Şifre"} hint={user ? "Değiştirmek istemiyorsanız boş bırakın." : "En az 8 karakter"}>
-          <input
-            type="password"
-            autoComplete="new-password"
-            minLength={8}
-            required={!user}
-            value={form.password}
-            onChange={(event) => set("password", event.target.value)}
-          />
-        </Field>
+        {!user && (
+          <div className="alert alert-info span-2">
+            Şifreyi siz belirlemezsiniz. Sistem rastgele bir geçici şifre üretip personelin e-posta adresine gönderir;
+            personel ilk girişinde kendi şifresini belirlemek zorundadır.
+          </div>
+        )}
         {user && !isSelf && (
           <label className="checkbox span-2">
             <input type="checkbox" checked={form.isActive} onChange={(event) => set("isActive", event.target.checked)} />

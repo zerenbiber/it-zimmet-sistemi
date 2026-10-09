@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router";
 import { api } from "../api/client";
 import type { Assignment, Paginated } from "../api/types";
 import { useCurrentUser } from "../auth/AuthContext";
@@ -50,6 +51,9 @@ export function MyAssignmentsPage() {
                       </>
                     )}
                   </dl>
+                  <Link to={`/zimmetler/${assignment.id}/tutanak`} className="btn btn-secondary btn-sm card-action">
+                    Zimmet tutanağı
+                  </Link>
                 </article>
               ))}
             </div>

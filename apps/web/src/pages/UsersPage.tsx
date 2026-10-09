@@ -38,6 +38,16 @@ export function UsersPage() {
     placeholderData: keepPreviousData,
   });
 
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const resetMutation = useMutation({
+    mutationFn: (user: User) => api(`/users/${user.id}/reset-password`, { method: "POST" }),
+    onSuccess: (_result, user) => {
+      setNotice(`${fullName(user)} için yeni geçici şifre ${user.email} adresine gönderildi.`);
+      void queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => api(`/users/${id}`, { method: "DELETE" }),
     onSuccess: () => {
@@ -78,7 +88,12 @@ export function UsersPage() {
         </select>
       </div>
 
-      <ErrorBox error={error ?? deleteMutation.error} />
+      {notice && (
+        <div className="alert alert-success" role="status">
+          {notice}
+        </div>
+      )}
+      <ErrorBox error={error ?? deleteMutation.error ?? resetMutation.error} />
       {isPending ? (
         <Loading />
       ) : data && data.items.length === 0 ? (
@@ -111,7 +126,12 @@ export function UsersPage() {
                       <td>{user.email}</td>
                       <td>{user.department?.name ?? <span className="muted">—</span>}</td>
                       <td>{ROLE_LABELS[user.role]}</td>
-                      <td>{user.isActive ? <span className="tag tag-good">Aktif</span> : <span className="tag">Pasif</span>}</td>
+                      <td>
+                        {user.isActive ? <span className="tag tag-good">Aktif</span> : <span className="tag">Pasif</span>}
+                        {user.isActive && user.mustChangePassword && (
+                          <div className="muted small">Şifre belirlemedi</div>
+                        )}
+                      </td>
                       <td>
                         {user.activeAssignmentCount > 0 ? (
                           <Link to={`/zimmetler?userId=${user.id}&active=true`}>{user.activeAssignmentCount} cihaz</Link>
@@ -123,6 +143,20 @@ export function UsersPage() {
                         <button className="btn btn-ghost btn-sm" onClick={() => setEditing(user)}>
                           Düzenle
                         </button>
+                        {user.id !== currentUser.id && user.isActive && (
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            disabled={resetMutation.isPending}
+                            onClick={() => {
+                              if (confirm(`${fullName(user)} için yeni bir geçici şifre üretilip ${user.email} adresine gönderilsin mi? Mevcut oturumları kapatılır.`)) {
+                                setNotice(null);
+                                resetMutation.mutate(user);
+                              }
+                            }}
+                          >
+                            Şifre sıfırla
+                          </button>
+                        )}
                         {user.id !== currentUser.id && (
                           <button
                             className="btn btn-ghost btn-sm text-danger"
@@ -147,7 +181,15 @@ export function UsersPage() {
         )
       )}
 
-      {editing && <UserFormModal user={editing === "new" ? undefined : editing} onClose={() => setEditing(null)} />}
+      {editing && (
+        <UserFormModal
+          user={editing === "new" ? undefined : editing}
+          onClose={() => setEditing(null)}
+          onCreated={(created) =>
+            setNotice(`${fullName(created)} eklendi. Geçici şifresi ${created.email} adresine gönderildi.`)
+          }
+        />
+      )}
     </>
   );
 }

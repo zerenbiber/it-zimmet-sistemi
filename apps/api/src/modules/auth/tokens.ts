@@ -6,8 +6,15 @@ import { unauthorized } from "../../lib/http-error.js";
 
 const ACCESS_TOKEN_ISSUER = "it-zimmet-api";
 
-export function signAccessToken(userId: string, role: Role): string {
-  return jwt.sign({ role }, env.JWT_ACCESS_SECRET, {
+export interface AccessTokenClaims {
+  userId: string;
+  role: Role;
+  /** While true the token only grants access to the auth endpoints. */
+  mustChangePassword: boolean;
+}
+
+export function signAccessToken({ userId, role, mustChangePassword }: AccessTokenClaims): string {
+  return jwt.sign({ role, ...(mustChangePassword && { pwc: true }) }, env.JWT_ACCESS_SECRET, {
     subject: userId,
     issuer: ACCESS_TOKEN_ISSUER,
     algorithm: "HS256",
@@ -15,7 +22,7 @@ export function signAccessToken(userId: string, role: Role): string {
   });
 }
 
-export function verifyAccessToken(token: string): { userId: string; role: Role } {
+export function verifyAccessToken(token: string): AccessTokenClaims {
   let payload: jwt.JwtPayload;
 
   try {
@@ -35,7 +42,7 @@ export function verifyAccessToken(token: string): { userId: string; role: Role }
     throw unauthorized("Geçersiz erişim anahtarı.", "INVALID_TOKEN");
   }
 
-  return { userId: payload.sub, role };
+  return { userId: payload.sub, role, mustChangePassword: payload.pwc === true };
 }
 
 /**

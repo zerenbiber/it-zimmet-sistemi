@@ -12,6 +12,7 @@ interface AuthContextValue {
   state: AuthState;
   login(email: string, password: string): Promise<void>;
   logout(): Promise<void>;
+  changePassword(currentPassword: string, newPassword: string): Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -76,7 +77,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     endSession();
   }, [endSession]);
 
-  const value = useMemo(() => ({ state, login, logout }), [state, login, logout]);
+  // The API ends every other session and returns a fresh token pair for this one.
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    const result = await api<{ user: CurrentUser; accessToken: string; refreshToken: string }>(
+      "/auth/change-password",
+      { method: "POST", body: { currentPassword, newPassword } },
+    );
+    session.store(result);
+    setState({ status: "authenticated", user: result.user });
+  }, []);
+
+  const value = useMemo(
+    () => ({ state, login, logout, changePassword }),
+    [state, login, logout, changePassword],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -11,6 +11,12 @@ export const authenticate: RequestHandler = (req, _res, next) => {
   }
 
   req.auth = verifyAccessToken(token);
+
+  // A temporary password only unlocks the auth endpoints, where it can be changed.
+  if (req.auth.mustChangePassword && req.baseUrl !== "/api/auth") {
+    throw forbidden("Devam etmeden önce şifrenizi değiştirmelisiniz.", "PASSWORD_CHANGE_REQUIRED");
+  }
+
   next();
 };
 
