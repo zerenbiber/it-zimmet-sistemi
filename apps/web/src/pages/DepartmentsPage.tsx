@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { api } from "../api/client";
@@ -69,7 +70,8 @@ export function DepartmentsPage() {
           aria-label="Yeni departman adı"
         />
         <button className="btn btn-primary" type="submit" disabled={createMutation.isPending}>
-          + Ekle
+          <Plus size={16} strokeWidth={2.25} aria-hidden="true" />
+          Ekle
         </button>
       </form>
 

@@ -1,14 +1,33 @@
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { CircleAlert, Inbox, Search, X } from "lucide-react";
+import { useEffect, useId, useRef, type InputHTMLAttributes, type ReactNode } from "react";
 import { errorMessage } from "../api/client";
 import type { DeviceStatus } from "../api/types";
 import { DEVICE_STATUS_LABELS } from "../lib/labels";
+import type { Tone } from "./icons";
+
+export const STATUS_TONE: Record<DeviceStatus, Tone> = {
+  IN_STOCK: "good",
+  ASSIGNED: "info",
+  FAULTY: "critical",
+  IN_REPAIR: "warning",
+  RETIRED: "neutral",
+};
 
 export function StatusBadge({ status }: { status: DeviceStatus }) {
   return (
-    <span className={`badge badge-${status.toLowerCase()}`}>
-      <span className="badge-dot" aria-hidden="true" />
+    <span className={`pill tone-${STATUS_TONE[status]}`}>
+      <span className="dot" aria-hidden="true" />
       {DEVICE_STATUS_LABELS[status]}
     </span>
+  );
+}
+
+export function SearchField(props: InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <label className="search-field">
+      <Search size={16} strokeWidth={2} aria-hidden="true" />
+      <input type="search" {...props} />
+    </label>
   );
 }
 
@@ -30,7 +49,8 @@ export function ErrorBox({ error }: { error: unknown }) {
   }
   return (
     <div className="alert alert-error" role="alert">
-      {errorMessage(error)}
+      <CircleAlert size={16} strokeWidth={2} aria-hidden="true" />
+      <span>{errorMessage(error)}</span>
     </div>
   );
 }
@@ -45,7 +65,14 @@ export function Loading({ label = "Yükleniyor…" }: { label?: string }) {
 }
 
 export function EmptyState({ children }: { children: ReactNode }) {
-  return <div className="empty-state">{children}</div>;
+  return (
+    <div className="empty-state">
+      <span className="empty-state-icon" aria-hidden="true">
+        <Inbox size={22} strokeWidth={1.5} />
+      </span>
+      {children}
+    </div>
+  );
 }
 
 export function Pagination({
@@ -123,7 +150,7 @@ export function Modal({
         <div className="modal-header">
           <h2 id={titleId}>{title}</h2>
           <button className="icon-btn" onClick={onClose} aria-label="Kapat">
-            ×
+            <X size={18} strokeWidth={2} aria-hidden="true" />
           </button>
         </div>
         <div className="modal-body">{children}</div>

@@ -1,10 +1,11 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { api } from "../api/client";
 import type { Department, Paginated, User } from "../api/types";
 import { useCurrentUser } from "../auth/AuthContext";
-import { EmptyState, ErrorBox, Loading, PageHeader, Pagination } from "../components/ui";
+import { EmptyState, ErrorBox, Loading, PageHeader, Pagination, SearchField } from "../components/ui";
 import { fullName } from "../lib/format";
 import { useDebouncedValue, useUrlFilters } from "../lib/hooks";
 import { ROLE_LABELS } from "../lib/labels";
@@ -64,15 +65,14 @@ export function UsersPage() {
         subtitle="Sisteme kayıtlı çalışanlar"
         actions={
           <button className="btn btn-primary" onClick={() => setEditing("new")}>
-            + Yeni personel
+            <Plus size={16} strokeWidth={2.25} aria-hidden="true" />
+            Yeni personel
           </button>
         }
       />
 
       <div className="toolbar">
-        <input
-          type="search"
-          className="toolbar-search"
+        <SearchField
           placeholder="Ad, soyad veya e-posta ara…"
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}

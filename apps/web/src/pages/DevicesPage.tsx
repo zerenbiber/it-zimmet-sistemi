@@ -1,12 +1,14 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { Download, Plus, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { api, downloadFile } from "../api/client";
 import type { Device, Paginated } from "../api/types";
-import { EmptyState, ErrorBox, Loading, PageHeader, Pagination, StatusBadge } from "../components/ui";
+import { EmptyState, ErrorBox, Loading, PageHeader, Pagination, SearchField, StatusBadge } from "../components/ui";
 import { fullName } from "../lib/format";
 import { useDebouncedValue, useUrlFilters } from "../lib/hooks";
 import { DEVICE_STATUS_LABELS, DEVICE_STATUSES, DEVICE_TYPE_LABELS, DEVICE_TYPES } from "../lib/labels";
+import { DeviceTypeIcon } from "../components/icons";
 import { DeviceFormModal } from "./DeviceFormModal";
 import { DeviceImportModal } from "./DeviceImportModal";
 
@@ -56,22 +58,23 @@ export function DevicesPage() {
         actions={
           <>
             <button className="btn btn-secondary" onClick={() => void exportToExcel()} disabled={exporting}>
-              {exporting ? "Hazırlanıyor…" : "Excel'e aktar"}
+              <Download size={16} strokeWidth={2} aria-hidden="true" />
+              {exporting ? "Hazırlanıyor…" : "Dışa aktar"}
             </button>
             <button className="btn btn-secondary" onClick={() => setImporting(true)}>
-              Excel'den içe aktar
+              <Upload size={16} strokeWidth={2} aria-hidden="true" />
+              İçe aktar
             </button>
             <button className="btn btn-primary" onClick={() => setCreating(true)}>
-              + Yeni cihaz
+              <Plus size={16} strokeWidth={2.25} aria-hidden="true" />
+              Yeni cihaz
             </button>
           </>
         }
       />
 
       <div className="toolbar">
-        <input
-          type="search"
-          className="toolbar-search"
+        <SearchField
           placeholder="Demirbaş no, seri no, marka, model veya personel ara…"
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
@@ -125,7 +128,12 @@ export function DevicesPage() {
                           {device.assetTag}
                         </Link>
                       </td>
-                      <td>{DEVICE_TYPE_LABELS[device.type]}</td>
+                      <td>
+                        <span className="with-icon">
+                          <DeviceTypeIcon type={device.type} />
+                          {DEVICE_TYPE_LABELS[device.type]}
+                        </span>
+                      </td>
                       <td>
                         {device.brand} {device.model}
                       </td>
