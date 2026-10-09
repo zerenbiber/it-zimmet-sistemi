@@ -1,0 +1,99 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { api, refreshSession, session } from "../api/client";
+import type { CurrentUser } from "../api/types";
+
+type AuthState =
+  | { status: "loading"; user: null }
+  | { status: "anonymous"; user: null }
+  | { status: "authenticated"; user: CurrentUser };
+
+interface AuthContextValue {
+  state: AuthState;
+  login(email: string, password: string): Promise<void>;
+  logout(): Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
+  const [state, setState] = useState<AuthState>(() =>
+    session.hasRefreshToken() ? { status: "loading", user: null } : { status: "anonymous", user: null },
+  );
+
+  const endSession = useCallback(() => {
+    session.clear();
+    queryClient.clear();
+    setState({ status: "anonymous", user: null });
+  }, [queryClient]);
+
+  // Restore the session after a reload.
+  useEffect(() => {
+    if (state.status !== "loading") {
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        if (!(await refreshSession())) {
+          throw new Error("session expired");
+        }
+        const { user } = await api<{ user: CurrentUser }>("/auth/me");
+        if (!cancelled) {
+          setState({ status: "authenticated", user });
+        }
+      } catch {
+        if (!cancelled) {
+          endSession();
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [state.status, endSession]);
+
+  useEffect(() => {
+    session.onExpired(endSession);
+    return () => session.onExpired(null);
+  }, [endSession]);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const result = await api<{ user: CurrentUser; accessToken: string; refreshToken: string }>("/auth/login", {
+      method: "POST",
+      body: { email, password },
+    });
+    session.store(result);
+    setState({ status: "authenticated", user: result.user });
+  }, []);
+
+  const logout = useCallback(async () => {
+    const refreshToken = session.refreshToken();
+    if (refreshToken) {
+      await api("/auth/logout", { method: "POST", body: { refreshToken } }).catch(() => undefined);
+    }
+    endSession();
+  }, [endSession]);
+
+  const value = useMemo(() => ({ state, login, logout }), [state, login, logout]);
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth(): AuthContextValue {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used inside AuthProvider");
+  }
+  return context;
+}
+
+/** For pages rendered behind the auth guard. */
+export function useCurrentUser(): CurrentUser {
+  const { state } = useAuth();
+  if (state.status !== "authenticated") {
+    throw new Error("useCurrentUser requires an authenticated session");
+  }
+  return state.user;
+}

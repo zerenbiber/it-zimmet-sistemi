@@ -16,3 +16,7 @@ export const forbidden = (message = "Bu işlem için yetkiniz yok.") =>
   new HttpError(403, message, "FORBIDDEN");
 
 export const notFound = (message = "Kaynak bulunamadı.") => new HttpError(404, message, "NOT_FOUND");
+
+export const badRequest = (message: string, code = "BAD_REQUEST") => new HttpError(400, message, code);
+
+export const conflict = (message: string, code = "CONFLICT") => new HttpError(409, message, code);
