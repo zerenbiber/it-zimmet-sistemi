@@ -1,28 +1,32 @@
-# Dependencies
+# Bağımlılıklar
 node_modules/
 
-# Build output
+# Derleme çıktıları
 dist/
 build/
 apps/api/src/generated/
 
-# Environment
+# Ortam değişkenleri
 .env
 .env.*
 !.env.example
 
-# Logs
+# Loglar
 *.log
 npm-debug.log*
 
-# Editors and OS
+# Editör ve işletim sistemi dosyaları
 .vscode/*
 !.vscode/extensions.json
 .idea/
 .DS_Store
 Thumbs.db
 
-# Mobile
-apps/mobile/.expo/
-apps/mobile/ios/
-apps/mobile/android/
+# Mobil (Android)
+apps/mobile/.gradle/
+apps/mobile/.kotlin/
+apps/mobile/.idea/
+apps/mobile/local.properties
+apps/mobile/**/build/
+*.iml
+*.apk

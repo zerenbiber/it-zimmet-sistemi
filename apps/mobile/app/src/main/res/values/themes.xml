@@ -1,0 +1,9 @@
+<resources>
+    <!-- Asıl tema Compose tarafında; bu sadece açılışta görünen pencere için. -->
+    <style name="Theme.Zimmet" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/background</item>
+    </style>
+
+    <color name="background">#F7F7F5</color>
+    <color name="launcher_background">#4F4FCF</color>
+</resources>
