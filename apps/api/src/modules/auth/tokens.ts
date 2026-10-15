@@ -9,7 +9,7 @@ const ACCESS_TOKEN_ISSUER = "it-zimmet-api";
 export interface AccessTokenClaims {
   userId: string;
   role: Role;
-  /** While true the token only grants access to the auth endpoints. */
+  /** true iken token sadece auth uç noktalarına erişim verir. */
   mustChangePassword: boolean;
 }
 
@@ -46,8 +46,8 @@ export function verifyAccessToken(token: string): AccessTokenClaims {
 }
 
 /**
- * Refresh tokens are opaque random strings. Only their HMAC is stored, so a
- * database leak does not expose usable tokens.
+ * Refresh token'lar rastgele üretilmiş metinlerdir. Veritabanında sadece HMAC'i
+ * tutulur, veritabanı sızsa bile token'lar kullanılamaz.
  */
 export function generateRefreshToken(): string {
   return randomBytes(48).toString("base64url");
@@ -55,6 +55,11 @@ export function generateRefreshToken(): string {
 
 export function hashRefreshToken(token: string): string {
   return createHmac("sha256", env.JWT_REFRESH_SECRET).update(token).digest("hex");
+}
+
+/** Sıfırlama kodu da açık saklanmaz; kullanıcı id'si eklenir ki aynı kod iki kişide aynı hash'i vermesin. */
+export function hashResetCode(userId: string, code: string): string {
+  return createHmac("sha256", env.JWT_REFRESH_SECRET).update(`${userId}:${code}`).digest("hex");
 }
 
 export function refreshTokenExpiry(from = new Date()): Date {

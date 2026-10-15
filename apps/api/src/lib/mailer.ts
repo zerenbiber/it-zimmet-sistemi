@@ -25,7 +25,31 @@ export async function sendMail(mail: Mail): Promise<void> {
 const escapeHtml = (value: string) =>
   value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
 
-/** E-mail carrying a system-generated temporary password. */
+/** "Şifremi unuttum" ile istenen 6 haneli doğrulama kodu. */
+export function passwordResetCodeMail(params: { to: string; firstName: string; code: string; validMinutes: number }): Mail {
+  return {
+    to: params.to,
+    subject: "IT Zimmet Sistemi şifre sıfırlama kodu",
+    text: [
+      `Merhaba ${params.firstName},`,
+      "",
+      `Şifre sıfırlama kodunuz: ${params.code}`,
+      "",
+      `Kod ${params.validMinutes} dakika geçerlidir. Kodu şifre sıfırlama ekranına girip yeni şifrenizi belirleyin.`,
+      "Bu işlemi siz talep etmediyseniz bu e-postayı dikkate almayın; mevcut şifreniz değişmedi.",
+    ].join("\n"),
+    html: `
+      <div style="font-family:Segoe UI,Arial,sans-serif;font-size:14px;color:#0b0b0b;max-width:520px">
+        <p>Merhaba ${escapeHtml(params.firstName)},</p>
+        <p>Şifre sıfırlama kodunuz:</p>
+        <p><code style="font-size:24px;letter-spacing:4px;background:#f0efec;padding:8px 14px;border-radius:6px">${escapeHtml(params.code)}</code></p>
+        <p>Kod ${params.validMinutes} dakika geçerlidir. Kodu şifre sıfırlama ekranına girip yeni şifrenizi belirleyin.</p>
+        <p style="color:#52514e;font-size:12px">Bu işlemi siz talep etmediyseniz bu e-postayı dikkate almayın; mevcut şifreniz değişmedi.</p>
+      </div>`,
+  };
+}
+
+/** Geçici şifreyi kullanıcıya gönderen e-posta. */
 export function temporaryPasswordMail(params: {
   to: string;
   firstName: string;

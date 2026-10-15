@@ -1,6 +1,6 @@
 /* ════════════════════════════════════════════════════════════════════════
-   Design tokens
-   Light is the default. Dark is a deep navy-grey, never pure black.
+   Tasarım değişkenleri
+   Varsayılan açık tema. Koyu tema saf siyah değil, koyu lacivert-gri.
    ════════════════════════════════════════════════════════════════════════ */
 
 :root {
@@ -110,7 +110,7 @@
   --shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.55);
 }
 
-/* Each tone class exposes the same three local variables to its children. */
+/* Her tone sınıfı alt elemanlarına aynı üç değişkeni verir. */
 .tone-good { --c: var(--tone-good); --c-soft: var(--tone-good-soft); --c-text: var(--tone-good-text); }
 .tone-info { --c: var(--tone-info); --c-soft: var(--tone-info-soft); --c-text: var(--tone-info-text); }
 .tone-warning { --c: var(--tone-warning); --c-soft: var(--tone-warning-soft); --c-text: var(--tone-warning-text); }
@@ -119,7 +119,7 @@
 .tone-accent { --c: var(--tone-accent); --c-soft: var(--tone-accent-soft); --c-text: var(--tone-accent-text); }
 
 /* ════════════════════════════════════════════════════════════════════════
-   Base
+   Temel
    ════════════════════════════════════════════════════════════════════════ */
 
 *,
@@ -241,7 +241,7 @@ input[type="file"]::file-selector-button {
   cursor: pointer;
 }
 
-/* ─── Utilities ───────────────────────────────────────────────────────── */
+/* ─── Yardımcı sınıflar ───────────────────────────────────────────────── */
 
 .mono {
   font-family: var(--mono);
@@ -286,7 +286,7 @@ input[type="file"]::file-selector-button {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   Buttons
+   Butonlar
    ════════════════════════════════════════════════════════════════════════ */
 
 .btn {
@@ -412,7 +412,7 @@ input[type="file"]::file-selector-button {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   Shell: icon rail + content
+   İskelet: ikon menüsü + içerik
    ════════════════════════════════════════════════════════════════════════ */
 
 .shell {
@@ -480,7 +480,7 @@ input[type="file"]::file-selector-button {
 .rail-link-label {
   display: none;
 }
-/* Tooltip */
+/* İpucu kutusu */
 .rail-link::after {
   content: attr(data-tooltip);
   position: absolute;
@@ -505,7 +505,7 @@ input[type="file"]::file-selector-button {
   translate: 0 -50%;
 }
 
-/* ─── Profile menu ────────────────────────────────────────────────────── */
+/* ─── Profil menüsü ───────────────────────────────────────────────────── */
 
 .profile {
   position: relative;
@@ -663,7 +663,7 @@ input[type="file"]::file-selector-button {
   }
 }
 
-/* ─── Content area ────────────────────────────────────────────────────── */
+/* ─── İçerik alanı ────────────────────────────────────────────────────── */
 
 .content {
   width: 100%;
@@ -711,7 +711,7 @@ input[type="file"]::file-selector-button {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   Surfaces: cards, tables, toolbars
+   Yüzeyler: kartlar, tablolar, araç çubukları
    ════════════════════════════════════════════════════════════════════════ */
 
 .card,
@@ -885,7 +885,7 @@ input[type="file"]::file-selector-button {
   background: color-mix(in srgb, var(--accent) 15%, transparent);
 }
 
-/* ─── Pills, dots, tags ───────────────────────────────────────────────── */
+/* ─── Rozetler ve etiketler ───────────────────────────────────────────── */
 
 .pill {
   display: inline-flex;
@@ -934,7 +934,7 @@ input[type="file"]::file-selector-button {
   color: var(--tone-info-text);
 }
 
-/* ─── Feedback ────────────────────────────────────────────────────────── */
+/* ─── Geri bildirim ───────────────────────────────────────────────────── */
 
 .alert {
   display: flex;
@@ -1024,7 +1024,7 @@ input[type="file"]::file-selector-button {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   Dashboard
+   Gösterge paneli
    ════════════════════════════════════════════════════════════════════════ */
 
 .hero {
@@ -1090,7 +1090,7 @@ input[type="file"]::file-selector-button {
   color: var(--text);
   transition: transform 0.22s var(--ease), box-shadow 0.22s var(--ease), border-color 0.22s var(--ease);
 }
-/* A soft wash of the card's tone in the top corner. */
+/* Kartın üst köşesinde hafif renk geçişi. */
 .kpi::before {
   content: "";
   position: absolute;
@@ -1142,7 +1142,7 @@ input[type="file"]::file-selector-button {
   color: var(--text-muted);
 }
 
-/* ─── Warranty alert ──────────────────────────────────────────────────── */
+/* ─── Garanti uyarısı ─────────────────────────────────────────────────── */
 
 .alert-card {
   margin-bottom: 24px;
@@ -1212,7 +1212,7 @@ input[type="file"]::file-selector-button {
   font-weight: 600;
 }
 
-/* ─── Panels ──────────────────────────────────────────────────────────── */
+/* ─── Paneller ────────────────────────────────────────────────────────── */
 
 .dashboard-grid {
   display: grid;
@@ -1342,7 +1342,7 @@ input[type="file"]::file-selector-button {
   background: var(--surface-hover);
 }
 
-/* ─── Activity feed ───────────────────────────────────────────────────── */
+/* ─── Son hareketler ──────────────────────────────────────────────────── */
 
 .activity {
   position: relative;
@@ -1360,7 +1360,7 @@ input[type="file"]::file-selector-button {
 .activity li:last-child {
   padding-bottom: 0;
 }
-/* Connector between icons */
+/* İkonlar arasındaki bağlantı çizgisi */
 .activity li:not(:last-child)::before {
   content: "";
   position: absolute;
@@ -1423,7 +1423,7 @@ input[type="file"]::file-selector-button {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   Device detail, timeline, cards
+   Cihaz detayı, zaman çizelgesi, kartlar
    ════════════════════════════════════════════════════════════════════════ */
 
 .detail-grid {
@@ -1521,7 +1521,7 @@ input[type="file"]::file-selector-button {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   Forms & modal
+   Formlar ve modal
    ════════════════════════════════════════════════════════════════════════ */
 
 .field {
@@ -1700,7 +1700,7 @@ input[type="file"]::file-selector-button {
   }
 }
 
-/* ─── Login & forced password change ──────────────────────────────────── */
+/* ─── Giriş ve zorunlu şifre değişikliği ──────────────────────────────── */
 
 .login-page {
   min-height: 100vh;
@@ -1740,13 +1740,22 @@ input[type="file"]::file-selector-button {
   min-height: 42px;
   margin-top: 4px;
 }
+.login-forgot {
+  align-self: flex-end;
+  margin-top: -8px;
+}
+.login-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
 
 .profile-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   Assignment form (tutanak) — always black on white, it is paper
+   Zimmet tutanağı — kâğıda basılacağı için her zaman beyaz üzerine siyah
    ════════════════════════════════════════════════════════════════════════ */
 
 .document-toolbar {
@@ -1861,7 +1870,7 @@ input[type="file"]::file-selector-button {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   Responsive
+   Mobil uyum
    ════════════════════════════════════════════════════════════════════════ */
 
 @media (max-width: 1080px) {
@@ -1880,7 +1889,7 @@ input[type="file"]::file-selector-button {
   }
 }
 
-/* Phones: the rail becomes a bottom tab bar. */
+/* Telefonda yan menü alt sekme çubuğuna dönüşür. */
 @media (max-width: 720px) {
   .shell {
     grid-template-columns: minmax(0, 1fr);
@@ -2011,7 +2020,7 @@ input[type="file"]::file-selector-button {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   Printing: only the element marked .print-area
+   Yazdırma: sadece .print-area sınıflı alan basılır
    ════════════════════════════════════════════════════════════════════════ */
 
 @page {

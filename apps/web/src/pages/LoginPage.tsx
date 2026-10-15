@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router";
+import { Link, Navigate, useLocation, useNavigate } from "react-router";
 import { useAuth } from "../auth/AuthContext";
 import { ErrorBox, Field } from "../components/ui";
 
@@ -62,6 +62,9 @@ export function LoginPage() {
             onChange={(event) => setPassword(event.target.value)}
           />
         </Field>
+        <Link className="link-subtle login-forgot" to="/sifremi-unuttum">
+          Şifremi unuttum
+        </Link>
         <button className="btn btn-primary btn-block" type="submit" disabled={submitting}>
           {submitting ? "Giriş yapılıyor…" : "Giriş Yap"}
         </button>

@@ -7,7 +7,7 @@ datasource db {
   provider = "postgresql"
 }
 
-// ─── Enums ────────────────────────────────────────────────────────────────────
+// ─── Enum'lar ─────────────────────────────────────────────────────────────────
 
 enum Role {
   ADMIN
@@ -45,7 +45,7 @@ enum DeviceEventType {
   DELETED
 }
 
-// ─── Organization ─────────────────────────────────────────────────────────────
+// ─── Organizasyon ─────────────────────────────────────────────────────────────
 
 model Department {
   id        String   @id @default(uuid()) @db.Uuid
@@ -69,13 +69,17 @@ model User {
   phone              String?   @db.VarChar(20)
   departmentId       String?   @map("department_id") @db.Uuid
   isActive           Boolean   @default(true) @map("is_active")
-  /// Set while the user holds a system-generated temporary password.
+  /// Kullanıcı sistemin verdiği geçici şifreyi kullanıyorsa true olur.
   mustChangePassword Boolean   @default(false) @map("must_change_password")
   passwordChangedAt  DateTime? @map("password_changed_at")
+  /// "Şifremi unuttum" kodu. Kodun kendisi değil HMAC'i saklanır; 15 dk geçerli, 5 deneme hakkı var.
+  resetCodeHash      String?   @map("reset_code_hash") @db.VarChar(128)
+  resetCodeExpiresAt DateTime? @map("reset_code_expires_at")
+  resetCodeAttempts  Int       @default(0) @map("reset_code_attempts")
   lastLoginAt        DateTime? @map("last_login_at")
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
-  /// Users are soft-deleted so that their assignment history is preserved.
+  /// Kullanıcı tamamen silinmez, zimmet geçmişi kaybolmasın diye sadece işaretlenir.
   deletedAt          DateTime? @map("deleted_at")
 
   department Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
@@ -106,11 +110,11 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
-// ─── Inventory ────────────────────────────────────────────────────────────────
+// ─── Envanter ─────────────────────────────────────────────────────────────────
 
 model Device {
   id              String       @id @default(uuid()) @db.Uuid
-  /// Human-readable unique identifier encoded into the device's QR code (e.g. IT-2026-00042).
+  /// QR koda yazılan demirbaş numarası (ör. IT-2026-00042).
   assetTag        String       @unique @map("asset_tag") @db.VarChar(32)
   type            DeviceType
   brand           String       @db.VarChar(100)
@@ -122,7 +126,7 @@ model Device {
   notes           String?
   createdAt       DateTime     @default(now()) @map("created_at")
   updatedAt       DateTime     @updatedAt @map("updated_at")
-  /// Devices are soft-deleted so that their assignment history is preserved.
+  /// Cihaz da tamamen silinmez, zimmet geçmişi korunur.
   deletedAt       DateTime?    @map("deleted_at")
 
   assignments Assignment[]
@@ -134,7 +138,7 @@ model Device {
   @@map("devices")
 }
 
-/// Sequence source for generating sequential, year-scoped asset tags.
+/// Demirbaş numaraları için yıllık sayaç.
 model AssetTagCounter {
   year      Int @id
   lastValue Int @default(0) @map("last_value")
@@ -142,11 +146,11 @@ model AssetTagCounter {
   @@map("asset_tag_counters")
 }
 
-// ─── Assignment (Zimmet) ──────────────────────────────────────────────────────
+// ─── Zimmet ───────────────────────────────────────────────────────────────────
 
-/// A device can have many assignments over time, but at most one open
-/// assignment (returnedAt IS NULL). This invariant is enforced by a partial
-/// unique index defined in the initial migration.
+/// Bir cihaz zaman içinde birçok kez zimmetlenebilir ama aynı anda sadece bir
+/// açık zimmeti olabilir (returnedAt boş). Bu kural ilk migration'daki kısmi
+/// unique index ile veritabanı seviyesinde korunuyor.
 model Assignment {
   id           String    @id @default(uuid()) @db.Uuid
   deviceId     String    @map("device_id") @db.Uuid
@@ -168,7 +172,7 @@ model Assignment {
   @@map("assignments")
 }
 
-// ─── Audit Log ────────────────────────────────────────────────────────────────
+// ─── Cihaz geçmişi (log) ──────────────────────────────────────────────────────
 
 model DeviceEvent {
   id            String          @id @default(uuid()) @db.Uuid

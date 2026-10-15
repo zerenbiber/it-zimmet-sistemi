@@ -1,17 +1,23 @@
+import { randomInt, timingSafeEqual } from "node:crypto";
 import bcrypt from "bcryptjs";
 import type { Role } from "../../generated/prisma/enums.js";
 import { badRequest, notFound, unauthorized } from "../../lib/http-error.js";
+import { passwordResetCodeMail, sendMail } from "../../lib/mailer.js";
 import { hashPassword } from "../../lib/password.js";
 import { prisma } from "../../lib/prisma.js";
-import type { ChangePasswordInput, LoginInput } from "./auth.schemas.js";
+import type { ChangePasswordInput, ForgotPasswordInput, LoginInput, ResetPasswordInput } from "./auth.schemas.js";
 import {
   generateRefreshToken,
   hashRefreshToken,
+  hashResetCode,
   refreshTokenExpiry,
   signAccessToken,
 } from "./tokens.js";
 
-/** Compared against when the email is unknown, so response timing does not reveal which emails exist. */
+const RESET_CODE_VALID_MINUTES = 15;
+const RESET_CODE_MAX_ATTEMPTS = 5;
+
+/** E-posta bulunamazsa bununla karşılaştırılır; cevap süresinden hangi e-postanın kayıtlı olduğu anlaşılmasın. */
 const DUMMY_PASSWORD_HASH = bcrypt.hashSync("timing-attack-dummy-password", 12);
 
 const publicUserSelect = {
@@ -60,8 +66,8 @@ export async function login({ email, password }: LoginInput) {
 }
 
 /**
- * Rotates the refresh token. Presenting an already-revoked token is treated as
- * token theft, so every active session of that user is revoked.
+ * Refresh token'ı yeniler. Önceden iptal edilmiş bir token gelirse çalınmış
+ * sayılır ve kullanıcının tüm açık oturumları kapatılır.
  */
 export async function refresh(refreshToken: string) {
   const stored = await prisma.refreshToken.findUnique({
@@ -87,7 +93,7 @@ export async function refresh(refreshToken: string) {
     throw unauthorized("Oturumun süresi doldu, lütfen tekrar giriş yapın.", "REFRESH_TOKEN_EXPIRED");
   }
 
-  // The conditional update stops two concurrent refreshes with the same token from both succeeding.
+  // Koşullu güncelleme sayesinde aynı token'la gelen iki eş zamanlı istekten sadece biri geçer.
   const { count } = await prisma.refreshToken.updateMany({
     where: { id: stored.id, revokedAt: null },
     data: { revokedAt: new Date() },
@@ -119,8 +125,70 @@ export async function getCurrentUser(userId: string) {
 }
 
 /**
- * Replaces the password, clears the temporary-password flag and ends every
- * other session, then issues a fresh token pair for the current one.
+ * "Şifremi unuttum": e-postaya 6 haneli kod gönderir. Kullanıcının mevcut şifresi
+ * kod girilene kadar değişmez. E-posta kayıtlı olsun olmasın cevap aynıdır, böylece
+ * bu uç noktayla hangi e-postaların sistemde olduğu öğrenilemez.
+ */
+export async function requestPasswordReset({ email }: ForgotPasswordInput) {
+  const user = await prisma.user.findFirst({ where: { email, isActive: true, deletedAt: null } });
+  if (!user) {
+    return;
+  }
+
+  const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      resetCodeHash: hashResetCode(user.id, code),
+      resetCodeExpiresAt: new Date(Date.now() + RESET_CODE_VALID_MINUTES * 60 * 1000),
+      resetCodeAttempts: 0,
+    },
+  });
+
+  // Gönderim beklenmez: beklenseydi cevap süresinden e-postanın kayıtlı olduğu anlaşılabilirdi.
+  sendMail(
+    passwordResetCodeMail({ to: user.email, firstName: user.firstName, code, validMinutes: RESET_CODE_VALID_MINUTES }),
+  ).catch((error: unknown) => console.error("Password reset e-mail failed:", error));
+}
+
+/** Kod doğruysa yeni şifreyi kaydeder ve açık oturumların hepsini kapatır. */
+export async function resetPasswordWithCode({ email, code, newPassword }: ResetPasswordInput) {
+  const invalid = () => badRequest("Kod hatalı ya da süresi dolmuş.", "INVALID_RESET_CODE");
+
+  const user = await prisma.user.findFirst({ where: { email, isActive: true, deletedAt: null } });
+  if (!user?.resetCodeHash || !user.resetCodeExpiresAt || user.resetCodeExpiresAt <= new Date()) {
+    throw invalid();
+  }
+  if (user.resetCodeAttempts >= RESET_CODE_MAX_ATTEMPTS) {
+    throw badRequest("Çok fazla hatalı deneme yapıldı. Yeni bir kod isteyin.", "RESET_CODE_LOCKED");
+  }
+
+  const expected = Buffer.from(user.resetCodeHash, "hex");
+  const actual = Buffer.from(hashResetCode(user.id, code), "hex");
+  if (!timingSafeEqual(expected, actual)) {
+    await prisma.user.update({ where: { id: user.id }, data: { resetCodeAttempts: { increment: 1 } } });
+    throw invalid();
+  }
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: await hashPassword(newPassword),
+        mustChangePassword: false,
+        passwordChangedAt: new Date(),
+        resetCodeHash: null,
+        resetCodeExpiresAt: null,
+        resetCodeAttempts: 0,
+      },
+    }),
+    prisma.refreshToken.updateMany({ where: { userId: user.id, revokedAt: null }, data: { revokedAt: new Date() } }),
+  ]);
+}
+
+/**
+ * Şifreyi değiştirir, geçici şifre işaretini kaldırır ve diğer tüm oturumları
+ * kapatır. Mevcut oturum için yeni bir token çifti döner.
  */
 export async function changePassword(userId: string, { currentPassword, newPassword }: ChangePasswordInput) {
   const user = await prisma.user.findFirst({ where: { id: userId, isActive: true, deletedAt: null } });

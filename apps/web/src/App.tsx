@@ -10,6 +10,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { DepartmentsPage } from "./pages/DepartmentsPage";
 import { DeviceDetailPage } from "./pages/DeviceDetailPage";
 import { DevicesPage } from "./pages/DevicesPage";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { LoginPage } from "./pages/LoginPage";
 import { MyAssignmentsPage } from "./pages/MyAssignmentsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
@@ -25,7 +26,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
   if (state.status === "anonymous") {
     return <Navigate to="/giris" replace state={{ from: location.pathname + location.search }} />;
   }
-  // A temporary password must be replaced before anything else is reachable.
+  // Geçici şifre değiştirilmeden uygulamanın başka bir yerine girilemez.
   if (state.user.mustChangePassword) {
     return <ForcedPasswordChangePage />;
   }
@@ -39,6 +40,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/giris" element={<LoginPage />} />
+      <Route path="/sifremi-unuttum" element={<ForgotPasswordPage />} />
       <Route
         element={
           <RequireAuth>

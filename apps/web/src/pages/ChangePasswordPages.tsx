@@ -4,13 +4,29 @@ import { ErrorBox, Field, PageHeader } from "../components/ui";
 import { formatDateTime, fullName } from "../lib/format";
 import { ROLE_LABELS } from "../lib/labels";
 
-/** Mirrors the API's password policy so problems show up while typing. */
-const PASSWORD_RULES = [
+/** API'deki şifre kurallarının aynısı, hatalar yazarken görünsün diye. */
+export const PASSWORD_RULES = [
   { label: "En az 10 karakter", test: (value: string) => value.length >= 10 },
   { label: "Bir büyük harf", test: (value: string) => /[A-ZÇĞİÖŞÜ]/.test(value) },
   { label: "Bir küçük harf", test: (value: string) => /[a-zçğıöşü]/.test(value) },
   { label: "Bir rakam", test: (value: string) => /\d/.test(value) },
 ];
+
+export function PasswordRuleList({ value }: { value: string }) {
+  return (
+    <ul className="rule-list" aria-label="Şifre kuralları">
+      {PASSWORD_RULES.map((rule) => {
+        const ok = rule.test(value);
+        return (
+          <li key={rule.label} className={ok ? "ok" : ""}>
+            <span aria-hidden="true">{ok ? "✓" : "○"}</span> {rule.label}
+            <span className="visually-hidden">{ok ? " (sağlandı)" : " (sağlanmadı)"}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 function ChangePasswordForm({ onDone, submitLabel }: { onDone?(): void; submitLabel: string }) {
   const { changePassword } = useAuth();
@@ -61,17 +77,7 @@ function ChangePasswordForm({ onDone, submitLabel }: { onDone?(): void; submitLa
           onChange={(event) => setNewPassword(event.target.value)}
         />
       </Field>
-      <ul className="rule-list" aria-label="Şifre kuralları">
-        {PASSWORD_RULES.map((rule) => {
-          const ok = rule.test(newPassword);
-          return (
-            <li key={rule.label} className={ok ? "ok" : ""}>
-              <span aria-hidden="true">{ok ? "✓" : "○"}</span> {rule.label}
-              <span className="visually-hidden">{ok ? " (sağlandı)" : " (sağlanmadı)"}</span>
-            </li>
-          );
-        })}
-      </ul>
+      <PasswordRuleList value={newPassword} />
       <Field label="Yeni şifre (tekrar)">
         <input
           type="password"
@@ -89,7 +95,7 @@ function ChangePasswordForm({ onDone, submitLabel }: { onDone?(): void; submitLa
   );
 }
 
-/** Shown instead of the app while the user still holds a temporary password. */
+/** Kullanıcı hâlâ geçici şifredeyse uygulama yerine bu ekran açılır. */
 export function ForcedPasswordChangePage() {
   const user = useCurrentUser();
   const { logout } = useAuth();

@@ -3,11 +3,15 @@ import { authenticate } from "../../middlewares/authenticate.js";
 import { validateBody } from "../../middlewares/validate.js";
 import {
   changePasswordSchema,
+  forgotPasswordSchema,
   loginSchema,
   refreshSchema,
+  resetPasswordSchema,
   type ChangePasswordInput,
+  type ForgotPasswordInput,
   type LoginInput,
   type RefreshInput,
+  type ResetPasswordInput,
 } from "./auth.schemas.js";
 import * as authService from "./auth.service.js";
 
@@ -25,6 +29,16 @@ authRouter.post("/refresh", validateBody(refreshSchema), async (req, res) => {
 authRouter.post("/logout", validateBody(refreshSchema), async (req, res) => {
   const { refreshToken } = req.body as RefreshInput;
   await authService.logout(refreshToken);
+  res.status(204).end();
+});
+
+authRouter.post("/forgot-password", validateBody(forgotPasswordSchema), async (req, res) => {
+  await authService.requestPasswordReset(req.body as ForgotPasswordInput);
+  res.status(204).end();
+});
+
+authRouter.post("/reset-password", validateBody(resetPasswordSchema), async (req, res) => {
+  await authService.resetPasswordWithCode(req.body as ResetPasswordInput);
   res.status(204).end();
 });
 
