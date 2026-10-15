@@ -132,7 +132,7 @@ export function Modal({
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
-  // Runs once per opening, so re-renders while typing do not steal focus.
+  // Her açılışta bir kez çalışır, yazarken odak kaybolmasın.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {

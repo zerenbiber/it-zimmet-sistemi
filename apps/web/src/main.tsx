@@ -12,7 +12,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
-      // Client errors (validation, not found, forbidden) will not succeed on retry.
+      // İstemci hataları (doğrulama, bulunamadı, yetkisiz) tekrar denense de düzelmez.
       retry: (failureCount, error) => !(error instanceof ApiError && error.status < 500) && failureCount < 2,
     },
   },

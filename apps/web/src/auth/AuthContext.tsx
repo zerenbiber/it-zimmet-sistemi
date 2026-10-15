@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({ status: "anonymous", user: null });
   }, [queryClient]);
 
-  // Restore the session after a reload.
+  // Sayfa yenilendiğinde oturumu geri yükle.
   useEffect(() => {
     if (state.status !== "loading") {
       return;
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     endSession();
   }, [endSession]);
 
-  // The API ends every other session and returns a fresh token pair for this one.
+  // API diğer tüm oturumları kapatır, bu oturum için yeni token çifti döner.
   const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
     const result = await api<{ user: CurrentUser; accessToken: string; refreshToken: string }>(
       "/auth/change-password",
@@ -103,7 +103,7 @@ export function useAuth(): AuthContextValue {
   return context;
 }
 
-/** For pages rendered behind the auth guard. */
+/** Giriş kontrolünün arkasındaki sayfalar için. */
 export function useCurrentUser(): CurrentUser {
   const { state } = useAuth();
   if (state.status !== "authenticated") {

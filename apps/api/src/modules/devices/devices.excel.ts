@@ -28,7 +28,7 @@ async function toBuffer(workbook: ExcelJS.Workbook): Promise<Buffer> {
   return Buffer.from(await workbook.xlsx.writeBuffer());
 }
 
-// ─── Export ───────────────────────────────────────────────────────────────────
+// ─── Dışa aktarma ─────────────────────────────────────────────────────────────
 
 export async function exportDevices(query: Omit<ListDevicesQuery, "page" | "pageSize">): Promise<Buffer> {
   const devices = await prisma.device.findMany({
@@ -90,7 +90,7 @@ export async function exportDevices(query: Omit<ListDevicesQuery, "page" | "page
   return toBuffer(workbook);
 }
 
-// ─── Import template ──────────────────────────────────────────────────────────
+// ─── İçe aktarma şablonu ──────────────────────────────────────────────────────
 
 const IMPORT_COLUMNS = [
   { header: "Tür", key: "type", width: 22, required: true },
@@ -110,7 +110,7 @@ export async function buildImportTemplate(): Promise<Buffer> {
   sheet.columns = IMPORT_COLUMNS.map(({ header, key, width }) => ({ header, key, width }));
   styleHeader(sheet);
 
-  // Device types are offered as a drop-down sourced from a hidden sheet.
+  // Cihaz türleri gizli bir sayfadan beslenen açılır listeden seçilir.
   const lists = workbook.addWorksheet("Listeler", { state: "veryHidden" });
   const typeLabels = Object.values(DEVICE_TYPE_LABELS);
   typeLabels.forEach((label, index) => (lists.getCell(index + 1, 1).value = label));
@@ -153,7 +153,7 @@ export async function buildImportTemplate(): Promise<Buffer> {
   return toBuffer(workbook);
 }
 
-// ─── Import ───────────────────────────────────────────────────────────────────
+// ─── İçe aktarma ──────────────────────────────────────────────────────────────
 
 export interface ImportRowError {
   row: number;
@@ -169,7 +169,7 @@ const TYPE_BY_NAME = new Map<string, DeviceType>(
   ]),
 );
 
-/** Flattens the many shapes an ExcelJS cell value can take into plain text or a Date. */
+/** ExcelJS hücre değerinin alabileceği farklı biçimleri düz metne ya da Date'e çevirir. */
 function cellValue(cell: ExcelJS.Cell): string | Date | number | null {
   const value = cell.value;
   if (value === null || value === undefined) return null;
@@ -185,21 +185,21 @@ function cellValue(cell: ExcelJS.Cell): string | Date | number | null {
   return null;
 }
 
-/** Builds YYYY-MM-DD, or undefined for impossible dates such as 32.13.2025. */
+/** YYYY-MM-DD döner; 32.13.2025 gibi geçersiz tarihlerde undefined. */
 function calendarDate(year: number, month: number, day: number): string | undefined {
   const date = new Date(Date.UTC(year, month - 1, day));
   const valid = date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
   return valid ? date.toISOString().slice(0, 10) : undefined;
 }
 
-/** Accepts real Excel dates, Excel serial numbers, "GG.AA.YYYY" and "YYYY-AA-GG". */
+/** Excel tarihlerini, Excel seri numaralarını, "GG.AA.YYYY" ve "YYYY-AA-GG" biçimlerini kabul eder. */
 function toIsoDate(value: string | Date | number | null): string | null | undefined {
   if (value === null) return null;
   if (value instanceof Date) {
     return Number.isNaN(value.getTime()) ? undefined : value.toISOString().slice(0, 10);
   }
   if (typeof value === "number") {
-    // Excel serial date: days since 1899-12-30.
+    // Excel seri tarihi: 1899-12-30'dan bu yana geçen gün sayısı.
     return new Date(Math.round((value - 25569) * 86_400_000)).toISOString().slice(0, 10);
   }
   const turkish = /^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/.exec(value);
@@ -223,7 +223,7 @@ export async function importDevices(file: Buffer, actorId: string) {
     throw badRequest("Dosyada çalışma sayfası bulunamadı.", "INVALID_FILE");
   }
 
-  // Columns are located by header text, so their order in the file does not matter.
+  // Sütunlar başlık adına göre bulunur, dosyadaki sırası önemli değil.
   const columnIndex = new Map<ImportKey, number>();
   sheet.getRow(1).eachCell((cell, column) => {
     const header = normalize(String(cellValue(cell) ?? "").replace("*", ""));
@@ -282,7 +282,7 @@ export async function importDevices(file: Buffer, actorId: string) {
     });
 
     if (!parsed.success) {
-      // Date problems are already reported above in a friendlier form.
+      // Tarih hataları yukarıda daha anlaşılır şekilde zaten bildirildi.
       for (const issue of parsed.error.issues) {
         const field = String(issue.path[0]);
         if (field === "purchaseDate" && purchaseDate === undefined) continue;
@@ -310,7 +310,7 @@ export async function importDevices(file: Buffer, actorId: string) {
     throw badRequest("Dosyada içe aktarılacak satır bulunamadı.", "EMPTY_FILE");
   }
 
-  // Serial numbers already registered (including soft-deleted devices, which keep theirs).
+  // Sistemde kayıtlı seri numaraları (silinen cihazlarınki de dahil, numaralarını korurlar).
   const existing = await prisma.device.findMany({
     where: { serialNumber: { in: rows.map(({ data }) => data.serialNumber), mode: "insensitive" } },
     select: { serialNumber: true, assetTag: true },

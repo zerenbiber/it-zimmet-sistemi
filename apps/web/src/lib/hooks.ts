@@ -10,7 +10,7 @@ export function useDebouncedValue<T>(value: T, delayMs = 300): T {
   return debounced;
 }
 
-/** List filters kept in the URL so that they survive reloads and back navigation. */
+/** Liste filtreleri URL'de tutulur, sayfa yenilense ya da geri gelinse de kaybolmaz. */
 export function useUrlFilters<K extends string>(keys: readonly K[]) {
   const [params, setParams] = useSearchParams();
 
@@ -28,7 +28,7 @@ export function useUrlFilters<K extends string>(keys: readonly K[]) {
             next.set(key, String(value));
           }
         }
-        // Any filter change starts again from the first page.
+        // Filtre değişince ilk sayfaya dönülür.
         if (!("page" in changes)) {
           next.delete("page");
         }

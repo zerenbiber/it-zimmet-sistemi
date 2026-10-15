@@ -3,7 +3,7 @@ export class HttpError extends Error {
     public readonly status: number,
     message: string,
     public readonly code?: string,
-    /** Structured, client-facing detail such as per-row import errors. */
+    /** İstemciye dönülen ek detay (ör. Excel içe aktarmadaki satır hataları). */
     public readonly details?: unknown,
   ) {
     super(message);

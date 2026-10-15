@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    // In development the API is reached through the dev server, so no CORS round-trips are needed.
+    // Geliştirmede API'ye dev server üzerinden gidiliyor, CORS ile uğraşmaya gerek kalmıyor.
     proxy: {
       "/api": "http://localhost:4000",
     },

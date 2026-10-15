@@ -23,7 +23,7 @@ export const createDeviceSchema = z.object(deviceFields);
 
 export const updateDeviceSchema = z.object(deviceFields).partial();
 
-/** ASSIGNED is reached only through the assign endpoint. */
+/** ASSIGNED durumuna sadece zimmet uç noktasıyla geçilir. */
 export const changeStatusSchema = z.object({
   status: z.enum([DeviceStatus.IN_STOCK, DeviceStatus.FAULTY, DeviceStatus.IN_REPAIR, DeviceStatus.RETIRED]),
   note: z.string().trim().max(1000).optional(),
@@ -35,7 +35,7 @@ export const assignDeviceSchema = z.object({
 });
 
 export const returnDeviceSchema = z.object({
-  /** The state the device comes back in. */
+  /** Cihazın iade edildiğindeki durumu. */
   status: z.enum([DeviceStatus.IN_STOCK, DeviceStatus.FAULTY]).default(DeviceStatus.IN_STOCK),
   note: z.string().trim().max(1000).optional(),
 });

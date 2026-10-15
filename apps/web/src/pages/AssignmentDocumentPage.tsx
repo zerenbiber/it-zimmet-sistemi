@@ -9,10 +9,10 @@ import { ErrorBox, Loading } from "../components/ui";
 import { formatCalendarDate, formatDate, formatDateTime, fullName } from "../lib/format";
 import { DEVICE_TYPE_LABELS } from "../lib/labels";
 
-/** Short, human-readable form number derived from the assignment id. */
+/** Zimmet id'sinden türetilen kısa tutanak numarası. */
 const documentNumber = (id: string, kind: "Z" | "I") => `${kind}-${id.slice(0, 8).toUpperCase()}`;
 
-/** Printable hand-over form (`?tur=zimmet`, default) or return form (`?tur=iade`). */
+/** Yazdırılabilir teslim tutanağı (`?tur=zimmet`, varsayılan) ya da iade tutanağı (`?tur=iade`). */
 export function AssignmentDocumentPage() {
   const { id = "" } = useParams();
   const [params, setParams] = useSearchParams();

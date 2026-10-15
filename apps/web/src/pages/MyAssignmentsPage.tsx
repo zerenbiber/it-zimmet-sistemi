@@ -7,7 +7,7 @@ import { EmptyState, ErrorBox, Loading, PageHeader } from "../components/ui";
 import { formatDateTime } from "../lib/format";
 import { DEVICE_TYPE_LABELS } from "../lib/labels";
 
-/** Staff view: the API limits the list to the signed-in user's own assignments. */
+/** Personel ekranı: API listeyi giriş yapan kullanıcının kendi zimmetleriyle sınırlar. */
 export function MyAssignmentsPage() {
   const user = useCurrentUser();
   const { data, error, isPending } = useQuery({

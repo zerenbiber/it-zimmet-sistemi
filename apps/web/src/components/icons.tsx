@@ -38,7 +38,7 @@ export function DeviceTypeIcon({ type, size = 16 }: { type: DeviceType; size?: n
   return <Icon size={size} strokeWidth={1.75} aria-hidden="true" />;
 }
 
-/** Tone names map to the `--tone-*` colour tokens in styles.css. */
+/** Tone adları styles.css içindeki `--tone-*` renk değişkenlerine karşılık gelir. */
 export type Tone = "good" | "info" | "warning" | "critical" | "neutral" | "accent";
 
 export const EVENT_STYLE: Record<DeviceEventType, { icon: LucideIcon; tone: Tone }> = {

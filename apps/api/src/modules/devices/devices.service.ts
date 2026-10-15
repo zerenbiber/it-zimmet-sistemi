@@ -48,7 +48,7 @@ const STATUS_EVENT: Partial<Record<DeviceStatus, DeviceEventType>> = {
   [DeviceStatus.FAULTY]: DeviceEventType.FAULT_REPORTED,
 };
 
-/** Produces the next sequential, year-scoped tag such as IT-2026-00042. */
+/** Sıradaki demirbaş numarasını üretir (ör. IT-2026-00042), sayaç her yıl baştan başlar. */
 export async function nextAssetTag(tx: Prisma.TransactionClient): Promise<string> {
   const year = new Date().getFullYear();
   const [row] = await tx.$queryRaw<{ last_value: number }[]>`
@@ -190,7 +190,7 @@ export async function changeStatus(id: string, { status, note }: ChangeStatusInp
   }
 
   await prisma.$transaction(async (tx) => {
-    // Conditional update guards against a concurrent assignment.
+    // Koşullu güncelleme, aynı anda yapılan iki zimmete karşı koruyor.
     const { count } = await tx.device.updateMany({
       where: { id, status: device.status },
       data: { status },

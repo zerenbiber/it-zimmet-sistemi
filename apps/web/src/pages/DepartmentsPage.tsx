@@ -31,7 +31,7 @@ export function DepartmentsPage() {
     onSuccess: () => {
       setEditing(null);
       void invalidate();
-      // Department names are embedded in user and device listings.
+      // Departman adları kullanıcı ve cihaz listelerinde de görünüyor.
       void queryClient.invalidateQueries({ queryKey: ["users"] });
       void queryClient.invalidateQueries({ queryKey: ["devices"] });
     },

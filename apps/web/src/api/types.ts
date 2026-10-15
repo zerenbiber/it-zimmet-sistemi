@@ -141,7 +141,7 @@ interface DocumentPerson extends Person {
   department: Ref | null;
 }
 
-/** GET /assignments/:id — data for the printed hand-over and return forms. */
+/** GET /assignments/:id — yazdırılan teslim ve iade tutanaklarının verisi. */
 export interface AssignmentDocument {
   id: string;
   organizationName: string;

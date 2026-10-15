@@ -8,7 +8,7 @@ import { prisma } from "../../lib/prisma.js";
 import { containsAny } from "../../lib/search.js";
 import type { CreateUserInput, ListUsersQuery, UpdateUserInput } from "./users.schemas.js";
 
-/** Long enough for an SMTP round-trip inside the transaction. */
+/** Transaction içinde SMTP gönderimi bitebilsin diye uzun tutuldu. */
 const MAIL_TRANSACTION_TIMEOUT_MS = 30_000;
 
 const userSelect = {
@@ -73,8 +73,8 @@ export async function getUser(id: string) {
 }
 
 /**
- * Sends the temporary password inside the transaction: if the e-mail cannot be
- * delivered, the change is rolled back and nobody is left with a password they never received.
+ * Geçici şifre transaction içinde gönderilir: e-posta gitmezse değişiklik geri
+ * alınır, kimse eline ulaşmamış bir şifreyle kalmaz.
  */
 async function deliverTemporaryPassword(
   user: { email: string; firstName: string },
@@ -144,7 +144,7 @@ export async function updateUser(id: string, actorId: string, data: UpdateUserIn
     select: userSelect,
   });
 
-  // Deactivation or a role change ends every session of the user.
+  // Hesap pasife alınırsa ya da rolü değişirse tüm oturumları kapatılır.
   if (data.isActive === false || roleChanged) {
     await revokeSessions(id);
   }
@@ -162,7 +162,7 @@ export async function deleteUser(id: string, actorId: string) {
     throw conflict("Üzerinde zimmetli cihaz bulunan personel silinemez.", "USER_HAS_ASSIGNMENTS");
   }
 
-  // The email is released so that it can be reused by a new account.
+  // E-posta adresi boşa çıkarılır, yeni bir hesapta tekrar kullanılabilsin.
   await prisma.user.update({
     where: { id },
     data: { deletedAt: new Date(), isActive: false, email: `deleted-${id}@deleted.invalid` },

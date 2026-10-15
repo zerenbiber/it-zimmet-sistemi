@@ -17,7 +17,7 @@ services:
       timeout: 5s
       retries: 10
 
-  # Development mail catcher: every e-mail the API sends shows up at http://localhost:8025
+  # Geliştirme için mail yakalayıcı: API'nin gönderdiği tüm e-postalar http://localhost:8025 adresinde görünür
   mailpit:
     image: axllent/mailpit:v1.31.2
     container_name: zimmet-mailpit

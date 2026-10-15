@@ -11,7 +11,7 @@ const dateTimeFormat = new Intl.DateTimeFormat("tr-TR", { dateStyle: "short", ti
 
 const relativeFormat = new Intl.RelativeTimeFormat("tr-TR", { numeric: "auto" });
 
-/** "3 dakika önce", "dün" … falls back to the date after a week. */
+/** "3 dakika önce", "dün" … bir haftadan eskiyse tarihi gösterir. */
 export function formatRelative(value: string): string {
   const seconds = Math.round((new Date(value).getTime() - Date.now()) / 1000);
   const abs = Math.abs(seconds);
@@ -30,12 +30,12 @@ export function formatDate(value: string | null | undefined): string {
   return value ? dateFormat.format(new Date(value)) : "—";
 }
 
-/** Calendar dates (purchase, warranty) are stored at UTC midnight and must not shift with the time zone. */
+/** Takvim tarihleri (alım, garanti) UTC gece yarısı olarak saklanır, saat dilimine göre kaymamalı. */
 export function formatCalendarDate(value: string | null | undefined): string {
   return value ? dateOnlyFormat.format(new Date(value)) : "—";
 }
 
-/** ISO timestamp → value for an `<input type="date">`. */
+/** ISO zaman damgası → `<input type="date">` değeri. */
 export function toDateInput(value: string | null | undefined): string {
   return value ? value.slice(0, 10) : "";
 }

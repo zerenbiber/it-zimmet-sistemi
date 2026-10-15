@@ -48,7 +48,7 @@ devicesRouter.get("/import-template", async (_req, res) => {
   sendXlsx(res, "cihaz-ice-aktarma-sablonu.xlsx", await buildImportTemplate());
 });
 
-/** Body is the raw .xlsx file. All rows are created, or none if any row is invalid. */
+/** Gövde doğrudan .xlsx dosyası. Ya tüm satırlar eklenir ya da hatalı satır varsa hiçbiri. */
 devicesRouter.post(
   "/import",
   express.raw({ type: [XLSX_MIME, "application/octet-stream"], limit: "5mb" }),
@@ -60,7 +60,7 @@ devicesRouter.post(
   },
 );
 
-/** Used when a device's QR code is scanned. */
+/** Cihazın QR kodu okutulduğunda kullanılır. */
 devicesRouter.get("/by-tag/:assetTag", async (req, res) => {
   res.json(await devicesService.getDeviceByAssetTag(assetTagSchema.parse(req.params.assetTag)));
 });

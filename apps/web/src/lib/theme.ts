@@ -19,7 +19,7 @@ function applyTheme(preference: ThemePreference) {
   document.documentElement.dataset.theme = resolved;
 }
 
-/** Light is the default; dark and "follow the system" are opt-in. */
+/** Varsayılan açık tema; koyu tema ve "sisteme uy" isteğe bağlı. */
 export function useTheme() {
   const [preference, setPreference] = useState<ThemePreference>(readThemePreference);
 
@@ -38,7 +38,7 @@ export function useTheme() {
     try {
       localStorage.setItem(STORAGE_KEY, next);
     } catch {
-      // The choice then lasts only for this visit.
+      // Bu durumda seçim sadece bu ziyaret boyunca geçerli.
     }
     setPreference(next);
   }, []);

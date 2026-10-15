@@ -3,7 +3,7 @@ import type { Role } from "../generated/prisma/enums.js";
 declare global {
   namespace Express {
     interface Request {
-      /** Populated by the `authenticate` middleware. */
+      /** `authenticate` middleware'i tarafından doldurulur. */
       auth?: {
         userId: string;
         role: Role;

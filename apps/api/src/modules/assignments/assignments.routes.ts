@@ -21,7 +21,7 @@ export const assignmentsRouter = Router();
 
 assignmentsRouter.use(authenticate);
 
-/** Admins see every assignment; staff only see their own. */
+/** Admin tüm zimmetleri görür, personel sadece kendisininkileri. */
 assignmentsRouter.get("/", async (req, res) => {
   const query = listAssignmentsQuerySchema.parse(req.query);
   const userId = req.auth!.role === Role.ADMIN ? query.userId : req.auth!.userId;
@@ -61,7 +61,7 @@ const documentPersonSelect = {
   department: { select: { id: true, name: true } },
 } as const;
 
-/** Everything needed to print the hand-over / return form of one assignment. */
+/** Bir zimmetin teslim / iade tutanağını yazdırmak için gereken veriler. */
 assignmentsRouter.get("/:id", async (req, res) => {
   const assignment = await prisma.assignment.findUnique({
     where: { id: idParam(req.params.id) },

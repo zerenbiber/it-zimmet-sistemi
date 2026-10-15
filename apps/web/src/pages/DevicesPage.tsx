@@ -24,7 +24,7 @@ export function DevicesPage() {
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<unknown>(null);
 
-  // The export honours the filters currently applied to the list.
+  // Dışa aktarma, listede o an seçili filtreleri kullanır.
   async function exportToExcel() {
     setExporting(true);
     setExportError(null);
@@ -41,7 +41,7 @@ export function DevicesPage() {
     if (debouncedSearch !== values.search) {
       update({ search: debouncedSearch });
     }
-    // Only the debounced input should push into the URL.
+    // URL'ye sadece debounce edilmiş değer yazılsın.
   }, [debouncedSearch]);
 
   const { data, error, isPending } = useQuery({

@@ -13,6 +13,6 @@ export function paginated<T>(items: T[], total: number, { page, pageSize }: z.in
   return { items, total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
 }
 
-/** Empty query-string values ("?status=") are treated as absent. */
+/** Boş gelen parametreler ("?status=") hiç gönderilmemiş sayılır. */
 export const optionalQuery = <T extends z.ZodType>(schema: T) =>
   z.preprocess((value) => (value === "" ? undefined : value), schema.optional());

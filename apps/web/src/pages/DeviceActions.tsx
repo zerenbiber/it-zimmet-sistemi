@@ -46,7 +46,7 @@ export function AssignModal({ device, onClose }: ActionProps) {
   const [note, setNote] = useState("");
   const debouncedSearch = useDebouncedValue(search);
   const navigate = useNavigate();
-  // The hand-over form is opened right away so that it can be printed and signed.
+  // Teslim tutanağı hemen açılır, yazdırılıp imzalatılabilsin.
   const mutation = useDeviceMutation(device, "assign", (updated) =>
     updated.currentAssignment ? navigate(`/zimmetler/${updated.currentAssignment.id}/tutanak`) : onClose(),
   );

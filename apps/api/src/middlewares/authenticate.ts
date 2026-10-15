@@ -12,7 +12,7 @@ export const authenticate: RequestHandler = (req, _res, next) => {
 
   req.auth = verifyAccessToken(token);
 
-  // A temporary password only unlocks the auth endpoints, where it can be changed.
+  // Geçici şifreyle sadece auth uç noktalarına girilebilir, şifre orada değiştirilir.
   if (req.auth.mustChangePassword && req.baseUrl !== "/api/auth") {
     throw forbidden("Devam etmeden önce şifrenizi değiştirmelisiniz.", "PASSWORD_CHANGE_REQUIRED");
   }
@@ -20,7 +20,7 @@ export const authenticate: RequestHandler = (req, _res, next) => {
   next();
 };
 
-/** Must be used after `authenticate`. */
+/** `authenticate`'ten sonra kullanılmalı. */
 export const authorize =
   (...roles: Role[]): RequestHandler =>
   (req, _res, next) => {

@@ -43,7 +43,7 @@ export const errorHandler: ErrorRequestHandler = (error, _req, res, _next) => {
     return;
   }
 
-  // Malformed JSON bodies rejected by express.json()
+  // express.json()'ın reddettiği bozuk JSON gövdeleri
   if (error instanceof SyntaxError && "status" in error && error.status === 400) {
     res.status(400).json({ error: { code: "INVALID_JSON", message: "İstek gövdesi geçerli JSON değil." } });
     return;

@@ -45,7 +45,7 @@ async function seedAdminUser() {
       passwordHash: await bcrypt.hash(password, PASSWORD_HASH_ROUNDS),
       role: Role.ADMIN,
       departmentId: itDepartment.id,
-      // The seed password sits in a config file, so it must be replaced on first login.
+      // Seed şifresi .env dosyasında açıkta duruyor, bu yüzden ilk girişte değiştirilmesi zorunlu.
       mustChangePassword: true,
     },
   });

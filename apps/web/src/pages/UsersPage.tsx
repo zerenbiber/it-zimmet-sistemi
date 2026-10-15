@@ -25,7 +25,7 @@ export function UsersPage() {
     if (debouncedSearch !== values.search) {
       update({ search: debouncedSearch });
     }
-    // Only the debounced input should push into the URL.
+    // URL'ye sadece debounce edilmiş değer yazılsın.
   }, [debouncedSearch]);
 
   const departments = useQuery({

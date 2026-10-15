@@ -5,7 +5,7 @@ export class ApiError extends Error {
     public readonly status: number,
     message: string,
     public readonly code?: string,
-    /** Field errors for validation failures; per-row errors for imports. */
+    /** Doğrulama hatalarında alan hataları, içe aktarmada satır hataları. */
     public readonly details?: unknown,
   ) {
     super(message);
@@ -18,7 +18,7 @@ interface TokenPair {
   refreshToken: string;
 }
 
-// The access token lives only in memory; the refresh token survives reloads.
+// Access token sadece bellekte tutulur; refresh token sayfa yenilense de kalır.
 let accessToken: string | null = null;
 let refreshInFlight: Promise<boolean> | null = null;
 let onSessionExpired: (() => void) | null = null;
@@ -39,7 +39,7 @@ export const session = {
     try {
       localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
     } catch {
-      // Without storage the session simply does not survive a reload.
+      // Storage yoksa oturum sayfa yenilenince düşer, o kadar.
     }
   },
   clear() {
@@ -47,7 +47,7 @@ export const session = {
     try {
       localStorage.removeItem(REFRESH_TOKEN_KEY);
     } catch {
-      // Nothing to clear.
+      // Temizlenecek bir şey yok.
     }
   },
   onExpired(listener: (() => void) | null) {
@@ -55,7 +55,7 @@ export const session = {
   },
 };
 
-/** Concurrent 401s share one refresh request, because each refresh token can be used only once. */
+/** Aynı anda gelen 401'ler tek refresh isteğini paylaşır, çünkü her refresh token bir kez kullanılabilir. */
 export function refreshSession(): Promise<boolean> {
   refreshInFlight ??= (async () => {
     const refreshToken = readRefreshToken();
@@ -89,7 +89,7 @@ interface RequestOptions {
 }
 
 interface RawRequestOptions extends Omit<RequestOptions, "body"> {
-  /** Sent as-is (e.g. an uploaded file) instead of JSON. */
+  /** JSON'a çevrilmeden olduğu gibi gönderilir (ör. yüklenen dosya). */
   file?: File;
 }
 
@@ -104,7 +104,7 @@ function buildUrl(path: string, query?: Record<string, QueryValue>): string {
   return `/api${path}${search ? `?${search}` : ""}`;
 }
 
-/** Sends a request, refreshing the access token once if it has expired. */
+/** İsteği gönderir, access token'ın süresi dolduysa bir kez yenileyip tekrar dener. */
 async function request(path: string, { method = "GET", body, query, file }: RequestOptions & RawRequestOptions) {
   const send = () =>
     fetch(buildUrl(path, query), {
@@ -153,7 +153,7 @@ export async function uploadFile<T>(path: string, file: File): Promise<T> {
   return (await response.json()) as T;
 }
 
-/** Downloads a file from an authenticated endpoint and hands it to the browser. */
+/** Giriş gerektiren bir uç noktadan dosyayı indirip tarayıcıya verir. */
 export async function downloadFile(path: string, query?: Record<string, QueryValue>): Promise<void> {
   const response = await request(path, { query });
   const disposition = response.headers.get("Content-Disposition") ?? "";

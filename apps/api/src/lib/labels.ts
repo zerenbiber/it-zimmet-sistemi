@@ -1,6 +1,6 @@
 import type { DeviceStatus, DeviceType } from "../generated/prisma/enums.js";
 
-/** Turkish labels used in generated files; keep in sync with apps/web/src/lib/labels.ts. */
+/** Oluşturulan dosyalardaki Türkçe etiketler; apps/web/src/lib/labels.ts ile aynı tutulmalı. */
 export const DEVICE_TYPE_LABELS: Record<DeviceType, string> = {
   LAPTOP: "Dizüstü Bilgisayar",
   DESKTOP: "Masaüstü Bilgisayar",
